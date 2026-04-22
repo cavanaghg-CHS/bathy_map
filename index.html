@@ -52,7 +52,7 @@
       user-select: none;
     }
 
-    .language-toggle span {
+    .language-toggle strong {
       font-weight: bold;
     }
   </style>
@@ -69,34 +69,24 @@
 <script src="https://unpkg.com/esri-leaflet@3.0.12/dist/esri-leaflet.js"></script>
 
 <script>
-  // Initial language (browser-based)
+  // Initial language based on browser
   let currentLang =
     navigator.language && navigator.language.toLowerCase().startsWith("fr")
       ? "fr"
       : "en";
 
   // Create map
-  const map = L.map('map').setView([53.7, -132.8], 6);
+  const map = L.map("map").setView([53.7, -132.8], 6);
 
-  // Base map (language-neutral)
-  L.esri.basemapLayer("Gray").addTo(map);
+  // Native Esri basemaps (labels baked in)
+  const basemapEN = L.esri.basemapLayer("Gray");
+  const basemapFR = L.esri.basemapLayer("GrayFrance");
 
-  // Labels layers
-  const labelsEN = L.esri.dynamicMapLayer({
-    url: "https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer",
-    opacity: 1
-  });
-
-  const labelsFR = L.esri.dynamicMapLayer({
-    url: "https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places_Alternate/MapServer",
-    opacity: 1
-  });
-
-  // Add initial labels
+  // Add initial basemap
   if (currentLang === "fr") {
-    labelsFR.addTo(map);
+    basemapFR.addTo(map);
   } else {
-    labelsEN.addTo(map);
+    basemapEN.addTo(map);
   }
 
   // Language toggle control
@@ -108,20 +98,20 @@
     function updateLabel() {
       div.innerHTML =
         currentLang === "fr"
-          ? 'Langue : <span>FR</span> | EN'
-          : 'Language: <span>EN</span> | FR';
+          ? 'Langue : <strong>FR</strong> | EN'
+          : 'Language: <strong>EN</strong> | FR';
     }
 
     updateLabel();
 
     div.onclick = function () {
       if (currentLang === "en") {
-        map.removeLayer(labelsEN);
-        labelsFR.addTo(map);
+        map.removeLayer(basemapEN);
+        basemapFR.addTo(map);
         currentLang = "fr";
       } else {
-        map.removeLayer(labelsFR);
-        labelsEN.addTo(map);
+        map.removeLayer(basemapFR);
+        basemapEN.addTo(map);
         currentLang = "en";
       }
       updateLabel();
@@ -134,17 +124,17 @@
 
   // Colour ramp
   function getColor(year) {
-    return year < 1940 ? '#99CC99' :
-           year < 1970 ? '#66AA66' :
-           year < 1990 ? '#228B22' :
-                         '#006400';
+    return year < 1940 ? "#99CC99" :
+           year < 1970 ? "#66AA66" :
+           year < 1990 ? "#228B22" :
+                         "#006400";
   }
 
   function styleFeature(feature) {
     const year = new Date(feature.properties.statusDate).getFullYear();
 
     return {
-      color: '#004d00',
+      color: "#004d00",
       weight: 1.5,
       fillOpacity: 0.7,
       fillColor: getColor(year)
@@ -152,7 +142,7 @@
   }
 
   // Load GeoJSON
-  fetch('https://raw.githubusercontent.com/cavanaghg-chs/bathy_map/main/data/product-results.geojson')
+  fetch("https://raw.githubusercontent.com/cavanaghg-chs/bathy_map/main/data/product-results.geojson")
     .then(response => response.json())
     .then(data => {
       const geojsonLayer = L.geoJSON(data, {
@@ -167,22 +157,22 @@
 
       map.fitBounds(geojsonLayer.getBounds());
     })
-    .catch(error => console.error('GeoJSON load error:', error));
+    .catch(error => console.error("GeoJSON load error:", error));
 
   // Legend
-  const legend = L.control({ position: 'bottomright' });
+  const legend = L.control({ position: "bottomright" });
 
   legend.onAdd = function () {
-    const div = L.DomUtil.create('div', 'legend');
+    const div = L.DomUtil.create("div", "legend");
 
     const grades = [
-      { label: '1818 – 1939', color: '#99CC99' },
-      { label: '1940 – 1969', color: '#66AA66' },
-      { label: '1970 – 1989', color: '#228B22' },
-      { label: '1990 – Present', color: '#006400' }
+      { label: "1818 – 1939", color: "#99CC99" },
+      { label: "1940 – 1969", color: "#66AA66" },
+      { label: "1970 – 1989", color: "#228B22" },
+      { label: "1990 – Present", color: "#006400" }
     ];
 
-    div.innerHTML = '<strong>Date</strong><br>';
+    div.innerHTML = "<strong>Date</strong><br>";
 
     grades.forEach(g => {
       div.innerHTML +=
