@@ -69,7 +69,7 @@
 <script src="https://unpkg.com/esri-leaflet@3.0.12/dist/esri-leaflet.js"></script>
 
 <script>
-  // Initial language based on browser
+  // Initial language from browser
   let currentLang =
     navigator.language && navigator.language.toLowerCase().startsWith("fr")
       ? "fr"
@@ -78,9 +78,9 @@
   // Create map
   const map = L.map("map").setView([53.7, -132.8], 6);
 
-  // Native Esri basemaps (labels baked in)
-  const basemapEN = L.esri.basemapLayer("Gray");
-  const basemapFR = L.esri.basemapLayer("GrayFrance");
+  // Native Esri Topographic basemaps (labels baked in)
+  const basemapEN = L.esri.basemapLayer("Topographic");
+  const basemapFR = L.esri.basemapLayer("TopographicFrance");
 
   // Add initial basemap
   if (currentLang === "fr") {
