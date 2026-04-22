@@ -40,6 +40,21 @@
       margin-right: 8px;
       opacity: 0.8;
     }
+
+    /* Language toggle */
+    .language-toggle {
+      background: white;
+      padding: 6px 10px;
+      font-size: 13px;
+      border-radius: 5px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .language-toggle span {
+      font-weight: bold;
+    }
   </style>
 </head>
 
@@ -54,8 +69,8 @@
 <script src="https://unpkg.com/esri-leaflet@3.0.12/dist/esri-leaflet.js"></script>
 
 <script>
-  // Detect browser language (fr / en)
-  const lang =
+  // Initial language (browser-based)
+  let currentLang =
     navigator.language && navigator.language.toLowerCase().startsWith("fr")
       ? "fr"
       : "en";
@@ -63,21 +78,61 @@
   // Create map
   const map = L.map('map').setView([53.7, -132.8], 6);
 
-  // Base map (language‑neutral)
+  // Base map (language-neutral)
   L.esri.basemapLayer("Gray").addTo(map);
 
-  // Localized labels (World Boundaries and Places)
-  const labelsUrl =
-    lang === "fr"
-      ? "https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places_Alternate/MapServer"
-      : "https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer";
-
-  L.esri.dynamicMapLayer({
-    url: labelsUrl,
+  // Labels layers
+  const labelsEN = L.esri.dynamicMapLayer({
+    url: "https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer",
     opacity: 1
-  }).addTo(map);
+  });
 
-  // Reversed green ramp (old = light, new = dark)
+  const labelsFR = L.esri.dynamicMapLayer({
+    url: "https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places_Alternate/MapServer",
+    opacity: 1
+  });
+
+  // Add initial labels
+  if (currentLang === "fr") {
+    labelsFR.addTo(map);
+  } else {
+    labelsEN.addTo(map);
+  }
+
+  // Language toggle control
+  const languageControl = L.control({ position: "topright" });
+
+  languageControl.onAdd = function () {
+    const div = L.DomUtil.create("div", "language-toggle");
+
+    function updateLabel() {
+      div.innerHTML =
+        currentLang === "fr"
+          ? 'Langue : <span>FR</span> | EN'
+          : 'Language: <span>EN</span> | FR';
+    }
+
+    updateLabel();
+
+    div.onclick = function () {
+      if (currentLang === "en") {
+        map.removeLayer(labelsEN);
+        labelsFR.addTo(map);
+        currentLang = "fr";
+      } else {
+        map.removeLayer(labelsFR);
+        labelsEN.addTo(map);
+        currentLang = "en";
+      }
+      updateLabel();
+    };
+
+    return div;
+  };
+
+  languageControl.addTo(map);
+
+  // Colour ramp
   function getColor(year) {
     return year < 1940 ? '#99CC99' :
            year < 1970 ? '#66AA66' :
