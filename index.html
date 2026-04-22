@@ -87,7 +87,7 @@
         onEachFeature: (feature, layer) => {
           layer.bindPopup(
             `<strong>Document ID:</strong> ${feature.properties.documentId}<br>
-             <strong>Status Date:</strong> ${feature.properties.statusDate}`
+             <strong>Date:</strong> ${feature.properties.statusDate}`
           );
         }
       }).addTo(map);
@@ -109,7 +109,7 @@
       { label: '1990 – Present', color: '#006400' }
     ];
 
-    div.innerHTML = '<strong>Status Date</strong><br>';
+    div.innerHTML = '<strong>Date</strong><br>';
 
     grades.forEach(g => {
       div.innerHTML +=
