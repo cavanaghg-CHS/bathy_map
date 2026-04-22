@@ -11,65 +11,117 @@
   />
 
   <style>
-    html, body, #map {
+    html, body {
       margin: 0;
       padding: 0;
       height: 100%;
     }
 
-    .language-toggle {
+    #map {
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Legend styling */
+    .legend {
       background: white;
-      padding: 6px 10px;
-      font-size: 13px;
+      padding: 10px;
+      line-height: 1.4em;
+      color: #333;
+      box-shadow: 0 0 15px rgba(0,0,0,0.2);
       border-radius: 5px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.2);
-      cursor: pointer;
-      user-select: none;
+      font-size: 14px;
+    }
+
+    .legend i {
+      width: 18px;
+      height: 18px;
+      float: left;
+      margin-right: 8px;
+      opacity: 0.8;
     }
   </style>
 </head>
 
 <body>
+
 <div id="map"></div>
 
 <!-- Leaflet JS -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-<!-- ✅ Esri Leaflet (THIS IS THE KEY PART) -->
-<script src="https://unpkg.com/esri-leaflet@3.0.12/dist/esri-leaflet.js"></script>
-
 <script>
-  // Language detection
-  let lang =
-    navigator.language && navigator.language.toLowerCase().startsWith("fr")
-      ? "fr"
-      : "en";
-
   // Create map
   const map = L.map("map").setView([53.7, -132.8], 6);
 
-  // Native Esri basemaps (labels baked in)
-  const topoEN = L.esri.basemapLayer("Topographic");
-  const topoFR = L.esri.basemapLayer("TopographicFrance");
+  // ✅ Esri Topographic basemap (tiles only, English)
+  L.tileLayer(
+    "https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}",
+    {
+      attribution: "Tiles © Esri"
+    }
+  ).addTo(map);
 
-  (lang === "fr" ? topoFR : topoEN).addTo(map);
+  // Colour ramp
+  function getColor(year) {
+    return year < 1940 ? "#99CC99" :
+           year < 1970 ? "#66AA66" :
+           year < 1990 ? "#228B22" :
+                         "#006400";
+  }
 
-  // Language toggle
-  const langCtrl = L.control({ position: "topright" });
-  langCtrl.onAdd = function () {
-    const d = L.DomUtil.create("div", "language-toggle");
-    d.innerText = lang === "fr" ? "FR | EN" : "EN | FR";
-
-    d.onclick = function () {
-      map.removeLayer(lang === "fr" ? topoFR : topoEN);
-      lang = lang === "fr" ? "en" : "fr";
-      (lang === "fr" ? topoFR : topoEN).addTo(map);
-      d.innerText = lang === "fr" ? "FR | EN" : "EN | FR";
+  function styleFeature(feature) {
+    const year = new Date(feature.properties.statusDate).getFullYear();
+    return {
+      color: "#004d00",
+      weight: 1.5,
+      fillOpacity: 0.7,
+      fillColor: getColor(year)
     };
+  }
 
-    return d;
+  // Load GeoJSON
+  fetch("https://raw.githubusercontent.com/cavanaghg-chs/bathy_map/main/data/product-results.geojson")
+    .then(response => response.json())
+    .then(data => {
+      const layer = L.geoJSON(data, {
+        style: styleFeature,
+        onEachFeature: (feature, layer) => {
+          layer.bindPopup(
+            `<strong>Document ID:</strong> ${feature.properties.documentId}<br>
+             <strong>Date:</strong> ${feature.properties.statusDate}`
+          );
+        }
+      }).addTo(map);
+
+      map.fitBounds(layer.getBounds());
+    })
+    .catch(err => console.error("GeoJSON load error:", err));
+
+  // Legend
+  const legend = L.control({ position: "bottomright" });
+
+  legend.onAdd = function () {
+    const div = L.DomUtil.create("div", "legend");
+
+    const grades = [
+      { label: "1818 – 1939", color: "#99CC99" },
+      { label: "1940 – 1969", color: "#66AA66" },
+      { label: "1970 – 1989", color: "#228B22" },
+      { label: "1990 – Present", color: "#006400" }
+    ];
+
+    div.innerHTML = "<strong>Date</strong><br>";
+
+    grades.forEach(g => {
+      div.innerHTML +=
+        `<i style="background:${g.color}"></i>${g.label}<br>`;
+    });
+
+    return div;
   };
-  langCtrl.addTo(map);
+
+  legend.addTo(map);
 </script>
 
 </body>
