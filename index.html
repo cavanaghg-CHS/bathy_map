@@ -7,8 +7,7 @@
   <!-- Leaflet CSS -->
   <link
     rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
- n: 0;
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaf     margin: 0;
       padding: 0;
       height: 100%;
     }
@@ -25,16 +24,16 @@
 
 <!-- Leaflet JS -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.jscript>
-  // Create map
+  // Create the map
   const map = L.map('map').setView([53.7, -132.8], 6);
 
-  // Basemap
+  // Add OpenStreetMap basemap
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap contributors'
   }).addTo(map);
 
-  // Load GeoJSON from GitHub (RAW)
-  fetch('https://raw.githubusercontent.com/cavanaghg-CHS/bathy_map/main/data/product-results.geojson')
+  // Load GeoJSON from GitHub (RAW URL must match username case)
+  fetch('https://raw.githubusercontent.com/cavanaghg-chs/bathy_map/main/data/product-results.geojson')
     .then(response => response.json())
     .then(data => {
 
@@ -55,12 +54,14 @@
         }
       }).addTo(map);
 
-      // Zoom to data
+      // Zoom to the GeoJSON extent
       if (geojsonLayer.getBounds().isValid()) {
         map.fitBounds(geojsonLayer.getBounds());
       }
     })
-    .catch(error => console.error('Error loading GeoJSON:', error));
+    .catch(error => {
+      console.error('Failed to load GeoJSON:', error);
+    });
 </script>
 
 </body>
