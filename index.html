@@ -1,10 +1,10 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Leaflet Test</title>
+  <title>Bathy Map</title>
 
+  <!-- Leaflet CSS -->
   <link
     rel="stylesheet"
     href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -16,9 +16,29 @@
       padding: 0;
       height: 100%;
     }
+
     #map {
-      height: 100%;
       width: 100%;
+      height: 100%;
+    }
+
+    /* Legend styling */
+    .legend {
+      background: white;
+      padding: 10px;
+      line-height: 1.4em;
+      color: #333;
+      box-shadow: 0 0 15px rgba(0,0,0,0.2);
+      border-radius: 5px;
+      font-size: 14px;
+    }
+
+    .legend i {
+      width: 18px;
+      height: 18px;
+      float: left;
+      margin-right: 8px;
+      opacity: 0.8;
     }
   </style>
 </head>
@@ -27,34 +47,43 @@
 
 <div id="map"></div>
 
+<!-- Leaflet JS -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
+  // Create map
   const map = L.map('map').setView([53.7, -132.8], 6);
 
+  // Basemap
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap contributors'
   }).addTo(map);
 
-  const geojsonUrl =
-    'https://raw.githubusercontent.com/cavanaghg-chs/bathy_map/main/data/product-results.geojson';
+  // Reversed green ramp (old = light, new = dark)
+  function getColor(year) {
+    return year < 1940 ? '#99CC99' :   // 1818–1939
+           year < 1970 ? '#66AA66' :   // 1940–1969
+           year < 1990 ? '#228B22' :   // 1970–1989
+                          '#006400';  // 1990–present
+  }
 
-  console.log("Loading GeoJSON:", geojsonUrl);
+  function styleFeature(feature) {
+    const year = new Date(feature.properties.statusDate).getFullYear();
 
-  fetch(geojsonUrl)
-    .then(r => {
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      return r.json();
-    })
+    return {
+      color: '#004d00',
+      weight: 1.5,
+      fillOpacity: 0.7,
+      fillColor: getColor(year)
+    };
+  }
+
+  // Load GeoJSON
+  fetch('https://raw.githubusercontent.com/cavanaghg-chs/bathy_map/main/data/product-results.geojson')
+    .then(response => response.json())
     .then(data => {
-      console.log("GeoJSON loaded", data);
-
-      const layer = L.geoJSON(data, {
-        style: {
-          color: '#0055ff',
-          weight: 2,
-          fillOpacity: 0.25
-        },
+      const geojsonLayer = L.geoJSON(data, {
+        style: styleFeature,
         onEachFeature: (feature, layer) => {
           layer.bindPopup(
             `<strong>Document ID:</strong> ${feature.properties.documentId}<br>
@@ -63,9 +92,34 @@
         }
       }).addTo(map);
 
-      map.fitBounds(layer.getBounds());
+      map.fitBounds(geojsonLayer.getBounds());
     })
-    .catch(err => console.error("GeoJSON ERROR:", err));
+    .catch(error => console.error('GeoJSON load error:', error));
+
+  // Legend
+  const legend = L.control({ position: 'bottomright' });
+
+  legend.onAdd = function () {
+    const div = L.DomUtil.create('div', 'legend');
+
+    const grades = [
+      { label: '1818 – 1939', color: '#99CC99' },
+      { label: '1940 – 1969', color: '#66AA66' },
+      { label: '1970 – 1989', color: '#228B22' },
+      { label: '1990 – Present', color: '#006400' }
+    ];
+
+    div.innerHTML = '<strong>Status Date</strong><br>';
+
+    grades.forEach(g => {
+      div.innerHTML +=
+        `<i style="background:${g.color}"></i>${g.label}<br>`;
+    });
+
+    return div;
+  };
+
+  legend.addTo(map);
 </script>
 
 </body>
