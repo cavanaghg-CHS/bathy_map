@@ -2,18 +2,26 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Map Test</title>
+  <title>Bathy Map</title>
 
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-  />
+  <link rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
   <style>
     html, body, #map {
       margin: 0;
       padding: 0;
       height: 100%;
+    }
+
+    .language-toggle {
+      background: white;
+      padding: 6px 10px;
+      font-size: 13px;
+      border-radius: 5px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+      cursor: pointer;
+      user-select: none;
     }
   </style>
 </head>
@@ -25,8 +33,30 @@
 <script src="https://unpkg.com/esri-leaflet@3.0.12/dist/esri-leaflet.js"></script>
 
 <script>
+  let lang =
+    navigator.language && navigator.language.startsWith("fr")
+      ? "fr" : "en";
+
   const map = L.map("map").setView([53.7, -132.8], 6);
-  L.esri.basemapLayer("Topographic").addTo(map);
+
+  const topoEN = L.esri.basemapLayer("Topographic");
+  const topoFR = L.esri.basemapLayer("TopographicFrance");
+
+  (lang === "fr" ? topoFR : topoEN).addTo(map);
+
+  const langCtrl = L.control({ position: "topright" });
+  langCtrl.onAdd = () => {
+    const d = L.DomUtil.create("div", "language-toggle");
+    d.onclick = () => {
+      map.removeLayer(lang === "fr" ? topoFR : topoEN);
+      lang = lang === "fr" ? "en" : "fr";
+      (lang === "fr" ? topoFR : topoEN).addTo(map);
+      d.innerText = lang === "fr" ? "FR | EN" : "EN | FR";
+    };
+    d.innerText = lang === "fr" ? "FR | EN" : "EN | FR";
+    return d;
+  };
+  langCtrl.addTo(map);
 </script>
 </body>
 </html>
