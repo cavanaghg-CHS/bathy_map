@@ -8,8 +8,6 @@
   <link
     rel="stylesheet"
     href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-    crossorigin=""
   />
 
   <style>
@@ -18,8 +16,8 @@
       padding: 0;
     }
     #map {
-      height: 100vh;
       width: 100%;
+      height: 100vh;
     }
   </style>
 </head>
@@ -29,52 +27,14 @@
 <div id="map"></div>
 
 <!-- Leaflet JS -->
-<script
-  src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-  crossorigin=""
-></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-  // Create the map
-  const map = L.map('map').setView([48.5, -68.5], 7);
+  // Create map
+  const map = L.map('map').setView([53.7, -132.8], 6);
 
-  // Add basemap
+  // Basemap
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap contributors'
   }).addTo(map);
 
-  // Load GeoJSON from GitHub (RAW)
-  fetch('https://raw.githubusercontent.com/cavanaghg-CHS/bathy_map/main/data/product-results.geojson')
-    .then(response => response.json())
-    .then(data => {
-
-      const geojsonLayer = L.geoJSON(data, {
-        style: {
-          color: '#0055ff',
-          weight: 2
-        },
-        onEachFeature: (feature, layer) => {
-          const documentID = feature.properties?.documentID ?? 'N/A';
-          const statusDate = feature.properties?.statusdate ?? 'N/A';
-
-          layer.bindPopup(`
-            <strong>Document ID:</strong> ${documentID}<br>
-            <strong>Status Date:</strong> ${statusDate}
-          `);
-        }
-      }).addTo(map);
-
-      // Zoom map to the GeoJSON extent
-      if (geojsonLayer.getBounds().isValid()) {
-        map.fitBounds(geojsonLayer.getBounds());
-      }
-    })
-    .catch(err => {
-      console.error('Error loading GeoJSON:', err);
-    });
-</script>
-
-</body>
-</html>
-``
