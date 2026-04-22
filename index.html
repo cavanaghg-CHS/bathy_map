@@ -51,16 +51,23 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
+  // ✅ Detect browser language
+  const isFrench =
+    navigator.language &&
+    navigator.language.toLowerCase().startsWith("fr");
+
+  // ✅ Choose Esri basemap (native labels)
+  const esriTopoUrl = isFrench
+    ? "https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map_France/MapServer/tile/{z}/{y}/{x}"
+    : "https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}";
+
   // Create map
   const map = L.map("map").setView([53.7, -132.8], 6);
 
-  // ✅ Esri Topographic basemap (tiles only, English)
-  L.tileLayer(
-    "https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}",
-    {
-      attribution: "Tiles © Esri"
-    }
-  ).addTo(map);
+  // Add basemap
+  L.tileLayer(esriTopoUrl, {
+    attribution: "Tiles © Esri"
+  }).addTo(map);
 
   // Colour ramp
   function getColor(year) {
