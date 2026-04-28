@@ -47,19 +47,24 @@
 
 <div id="map"></div>
 
-<!-- Leaflet JS -->
+<!-- Leaflet -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<!-- Esri Leaflet (core) -->
+<script src="https://unpkg.com/esri-leaflet@3.0.12/dist/esri-leaflet.js"></script>
+
+<!-- Esri Leaflet Vector -->
+<script src="https://unpkg.com/esri-leaflet-vector@4.1.0/dist/esri-leaflet-vector.js"></script>
 
 <script>
   // Create map
   const map = L.map("map").setView([53.7, -132.8], 6);
 
-  // ✅ OpenStreetMap basemap
-  L.tileLayer(
-    "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+  // ✅ Esri Vector Basemap using style JSON
+  L.esri.Vector.vectorBasemapLayer(
+    "https://www.arcgis.com/sharing/rest/content/items/800d755712e8415aab301b9d55bc2800/resources/styles/root.json",
     {
-      maxZoom: 19,
-      attribution: "© OpenStreetMap contributors"
+      attribution: "© Esri"
     }
   ).addTo(map);
 
@@ -73,7 +78,6 @@
 
   function styleFeature(feature) {
     const year = new Date(feature.properties.statusDate).getFullYear();
-
     return {
       color: "#004d00",
       weight: 1.5,
@@ -98,7 +102,7 @@
 
       map.fitBounds(geojsonLayer.getBounds());
     })
-    .catch(error => console.error("GeoJSON load error:", error));
+    .catch(err => console.error("GeoJSON load error:", err));
 
   // Legend
   const legend = L.control({ position: "bottomright" });
@@ -128,3 +132,4 @@
 
 </body>
 </html>
+``
