@@ -17,6 +17,53 @@
       height: 100%;
     }
 
+    /* Selection panel (upper-right) */
+    .selection-panel {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 260px;
+      background: white;
+      padding: 10px;
+      font-size: 13px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.2);
+      border-radius: 5px;
+      z-index: 2;
+    }
+
+    .selection-panel h3 {
+      margin: 0 0 6px 0;
+      font-size: 14px;
+    }
+
+    .selection-list {
+      max-height: 180px;
+      overflow-y: auto;
+      margin-bottom: 8px;
+    }
+
+    .selection-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+
+    .selection-item button {
+      background: none;
+      border: none;
+      color: #c00;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .clear-all {
+      width: 100%;
+      padding: 4px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
     /* Legend */
     .legend {
       position: absolute;
@@ -30,37 +77,6 @@
       border-radius: 5px;
       z-index: 1;
     }
-
-    /* Selection panel */
-    .selection-panel {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      width: 260px;
-      background: white;
-      padding: 10px;
-      font-size: 13px;
-      box-shadow: 0 0 15px rgba(0,0,0,0.2);
-      border-radius: 5px;
-      z-index: 1;
-    }
-
-    .selection-list {
-      max-height: 180px;
-      overflow-y: auto;
-      margin-bottom: 8px;
-    }
-
-    .selection-item {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 4px;
-    }
-
-    button {
-      cursor: pointer;
-      font-size: 12px;
-    }
   </style>
 </head>
 
@@ -70,9 +86,9 @@
 
 <!-- Selection panel -->
 <div class="selection-panel">
-  <strong>Selected Documents</strong>
+  <h3>Selected Documents</h3>
   <div id="selectionList" class="selection-list"></div>
-  <button onclick="clearAllSelections()">Clear all</button>
+  <button class="clear-all" onclick="clearAllSelections()">Clear all</button>
 </div>
 
 <!-- Legend -->
@@ -88,7 +104,7 @@
 <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
 
 <script>
-  // Language detection
+  // ✅ Browser language detection (English default)
   const isFrench =
     navigator.language &&
     navigator.language.toLowerCase().startsWith("fr");
@@ -101,7 +117,7 @@
   const map = new maplibregl.Map({
     container: "map",
     style: isFrench ? STYLE_FR : STYLE_EN,
-    center: [-96, 62],
+    center: [-96, 62],   // Canada view
     zoom: 3,
     attributionControl: false
   });
@@ -114,6 +130,7 @@
   function updateSelectionUI() {
     const list = document.getElementById("selectionList");
     list.innerHTML = "";
+
     selectedDocs.forEach(id => {
       const row = document.createElement("div");
       row.className = "selection-item";
@@ -126,15 +143,23 @@
   }
 
   function removeSelection(id) {
+    if (!selectedDocs.has(id)) return;
+
     selectedDocs.delete(id);
-    map.setFeatureState({ source: "bathy", id }, { selected: false });
+    map.setFeatureState(
+      { source: "bathy", id },
+      { selected: false }
+    );
     updateSelectionUI();
   }
 
   function clearAllSelections() {
-    selectedDocs.forEach(id =>
-      map.setFeatureState({ source: "bathy", id }, { selected: false })
-    );
+    selectedDocs.forEach(id => {
+      map.setFeatureState(
+        { source: "bathy", id },
+        { selected: false }
+      );
+    });
     selectedDocs.clear();
     updateSelectionUI();
   }
@@ -154,70 +179,3 @@
         "fill-color": [
           "case",
           ["<", ["to-number", ["slice", ["get", "statusDate"], 0, 4]], 1940], "#99CC99",
-          ["<", ["to-number", ["slice", ["get", "statusDate"], 0, 4]], 1970], "#66AA66",
-          ["<", ["to-number", ["slice", ["get", "statusDate"], 0, 4]], 1990], "#228B22",
-          "#006400"
-        ],
-        "fill-opacity": 0.45
-      }
-    });
-
-    map.addLayer({
-      id: "bathy-outline",
-      type: "line",
-      source: "bathy",
-      paint: {
-        "line-color": [
-          "case",
-          ["boolean", ["feature-state", "selected"], false], "#FFD700",
-          ["boolean", ["feature-state", "hover"], false], "#00FFFF",
-          "#004d00"
-        ],
-        "line-width": [
-          "case",
-          ["boolean", ["feature-state", "selected"], false], 3,
-          ["boolean", ["feature-state", "hover"], false], 2,
-          1.2
-        ]
-      }
-    });
-
-    map.on("mousemove", "bathy-fill", e => {
-      if (e.features.length) {
-        if (hoveredId !== null) {
-          map.setFeatureState({ source: "bathy", id: hoveredId }, { hover: false });
-        }
-        hoveredId = e.features[0].id;
-        map.setFeatureState({ source: "bathy", id: hoveredId }, { hover: true });
-      }
-    });
-
-    map.on("mouseleave", "bathy-fill", () => {
-      if (hoveredId !== null) {
-        map.setFeatureState({ source: "bathy", id: hoveredId }, { hover: false });
-      }
-      hoveredId = null;
-    });
-
-    map.on("click", "bathy-fill", e => {
-      const id = e.features[0].id;
-      if (!selectedDocs.has(id)) {
-        selectedDocs.add(id);
-        map.setFeatureState({ source: "bathy", id }, { selected: true });
-        updateSelectionUI();
-      }
-
-      new maplibregl.Popup()
-        .setLngLat(e.lngLat)
-        .setHTML(
-          `<strong>Document ID:</strong> ${e.features[0].properties.documentId}<br>
-           <strong>Date:</strong> ${e.features[0].properties.statusDate}`
-        )
-        .addTo(map);
-    });
-  });
-</script>
-
-</body>
-</html>
-``
