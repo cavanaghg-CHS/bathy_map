@@ -5,13 +5,10 @@
   <title>Bathy Map</title>
 
   <!-- ✅ MapLibre CSS -->
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css"
-  />
-
-  <style>
-    html, body, #map {
+  <link rel="stylesheet"
+        href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre
+  <link rel="stylesheet"
+        href="https://unpkg.com/@mapbox/mapbox-gl-draw@1.5.0/dist/mapboxy, #map {
       margin: 0;
       padding: 0;
       height: 100%;
@@ -22,7 +19,7 @@
       position: absolute;
       top: 10px;
       left: 10px;
-      width: 260px;
+      width: 280px;
       background: white;
       padding: 10px;
       font-size: 13px;
@@ -37,7 +34,7 @@
     }
 
     .selection-list {
-      max-height: 180px;
+      max-height: 160px;
       overflow-y: auto;
       margin-bottom: 8px;
     }
@@ -57,9 +54,9 @@
       font-size: 12px;
     }
 
-    .clear-all {
+    .action-btn {
       width: 100%;
-      padding: 4px;
+      margin-top: 4px;
       font-size: 12px;
       cursor: pointer;
     }
@@ -70,9 +67,8 @@
       bottom: 20px;
       right: 20px;
       background: white;
-      padding: 10px 12px;
+      padding: 10px;
       font-size: 13px;
-      line-height: 1.4em;
       box-shadow: 0 0 15px rgba(0,0,0,0.2);
       border-radius: 5px;
       z-index: 5;
@@ -86,14 +82,17 @@
 
 <!-- Selection panel -->
 <div class="selection-panel">
-  <h3>Selected Documents</h3>
+  <h3 id="panelTitle"></h3>
   <div id="selectionList" class="selection-list"></div>
-  <button id="clearAllBtn" class="clear-all">Clear all</button>
+
+  <button id="clearBtn" class="action-btn"></button>
+  <button id="exportCsvBtn" class="action-btn"></button>
+  <button id="exportJsonBtn" class="action-btn"></button>
 </div>
 
 <!-- Legend -->
 <div class="legend">
-  <strong>Date</strong><br>
+  <strong id="legendTitle"></strong><br>
   <span style="color:#99CC99;">■</span> 1818–1939<br>
   <span style="color:#66AA66;">■</span> 1940–1969<br>
   <span style="color:#228B22;">■</span> 1970–1989<br>
@@ -101,133 +100,213 @@
 </div>
 
 <!-- ✅ MapLibre JS -->
-<script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+<script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre✅ Mapbox Draw JS -->
+<script src="https://unpkg.com/@mapbox/mapbox-gl-draw@1.5.-gl-draw.js</script>
 
 <script>
-  /* ---------- Map setup ---------- */
+/* ---------- Language ---------- */
 
-  const isFrench =
-    navigator.language &&
-    navigator.language.toLowerCase().startsWith("fr");
+const isFrench =
+  navigator.language &&
+  navigator.language.toLowerCase().startsWith("fr");
 
-  const STYLE_EN =
-    "https://www.arcgis.com/sharing/rest/content/items/800d755712e8415aab301b9d55bc2800/resources/styles/root.json";
-  const STYLE_FR =
-    "https://www.arcgis.com/sharing/rest/content/items/70e9deb5019d49cc88c6543887db9db5/resources/styles/root.json";
+const UI = isFrench ? {
+  panelTitle: "Documents sélectionnés",
+  clear: "Tout effacer",
+  exportCsv: "Exporter CSV",
+  exportJson: "Exporter JSON",
+  legend: "Date"
+} : {
+  panelTitle: "Selected Documents",
+  clear: "Clear all",
+  exportCsv: "Export CSV",
+  exportJson: "Export JSON",
+  legend: "Date"
+};
 
-  const map = new maplibregl.Map({
-    container: "map",
-    style: isFrench ? STYLE_FR : STYLE_EN,
-    center: [-96, 62],
-    zoom: 3,
-    attributionControl: false
+document.getElementById("panelTitle").textContent = UI.panelTitle;
+document.getElementById("clearBtn").textContent = UI.clear;
+document.getElementById("exportCsvBtn").textContent = UI.exportCsv;
+document.getElementById("exportJsonBtn").textContent = UI.exportJson;
+document.getElementById("legendTitle").textContent = UI.legend;
+
+/* ---------- Map ---------- */
+
+const STYLE_EN =
+  "https://www.arcgis.com/sharing/rest/content/items/800d755712e8415aab301b9d55bc2800/resources/styles/root.json";
+const STYLE_FR =
+  "https://www.arcgis.com/sharing/rest/content/items/70e9deb5019d49cc88c6543887db9db5/resources/styles/root.json";
+
+const map = new maplibregl.Map({
+  container: "map",
+  style: isFrench ? STYLE_FR : STYLE_EN,
+  center: [-96, 62],
+  zoom: 3,
+  attributionControl: false
+});
+
+map.addControl(new maplibregl.NavigationControl());
+
+/* ---------- Draw (Spatial Selection) ---------- */
+
+const draw = new MapboxDraw({
+  displayControlsDefault: false,
+  controls: { polygon: true, trash: true }
+});
+map.addControl(draw, "top-left");
+
+/* ---------- Selection State ---------- */
+
+const selectedDocs = new Set();
+const listEl = document.getElementById("selectionList");
+
+/* ---------- Helpers ---------- */
+
+function updateList() {
+  listEl.innerHTML = "";
+  selectedDocs.forEach(id => {
+    const row = document.createElement("div");
+    row.className = "selection-item";
+
+    const label = document.createElement("span");
+    label.textContent = id;
+
+    const btn = document.createElement("button");
+    btn.textContent = "✕";
+    btn.addEventListener("click", () => deselect(id));
+
+    row.appendChild(label);
+    row.appendChild(btn);
+    listEl.appendChild(row);
+  });
+}
+
+function select(id) {
+  if (selectedDocs.has(id)) return;
+  selectedDocs.add(id);
+  map.setFeatureState({ source: "bathy", id }, { selected: true });
+  updateList();
+}
+
+function deselect(id) {
+  if (!selectedDocs.has(id)) return;
+  selectedDocs.delete(id);
+  map.setFeatureState({ source: "bathy", id }, { selected: false });
+  updateList();
+}
+
+document.getElementById("clearBtn").addEventListener("click", () => {
+  selectedDocs.forEach(id =>
+    map.setFeatureState({ source: "bathy", id }, { selected: false })
+  );
+  selectedDocs.clear();
+  updateList();
+});
+
+/* ---------- Export ---------- */
+
+document.getElementById("exportCsvBtn").addEventListener("click", () => {
+  const csv = Array.from(selectedDocs).join("\n");
+  download(csv, "selected_documents.csv", "text/csv");
+});
+
+document.getElementById("exportJsonBtn").addEventListener("click", () => {
+  download(
+    JSON.stringify(Array.from(selectedDocs), null, 2),
+    "selected_documents.json",
+    "application/json"
+  );
+});
+
+function download(content, filename, type) {
+  const blob = new Blob([content], { type });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+/* ---------- Data ---------- */
+
+let allFeatures = [];
+
+map.on("load", () => {
+  map.addSource("bathy", {
+    type: "geojson",
+    data: "https://raw.githubusercontent.com/cavanaghg-chs/bathy_map/main/data/product-results.geojson",
+    promoteId: "documentId"
   });
 
-  map.addControl(new maplibregl.NavigationControl());
-
-  /* ---------- Selection state ---------- */
-
-  const selectedDocs = new Set();
-  const selectionListEl = document.getElementById("selectionList");
-
-  function updateSelectionUI() {
-    selectionListEl.innerHTML = "";
-
-    selectedDocs.forEach(id => {
-      const row = document.createElement("div");
-      row.className = "selection-item";
-
-      const label = document.createElement("span");
-      label.textContent = id;
-
-      const btn = document.createElement("button");
-      btn.textContent = "✕";
-
-      // ✅ DIRECT event binding (this always works)
-      btn.addEventListener("click", () => {
-        removeSelection(id);
-      });
-
-      row.appendChild(label);
-      row.appendChild(btn);
-      selectionListEl.appendChild(row);
-    });
-  }
-
-  function removeSelection(id) {
-    if (!selectedDocs.has(id)) return;
-
-    selectedDocs.delete(id);
-    map.setFeatureState(
-      { source: "bathy", id },
-      { selected: false }
-    );
-    updateSelectionUI();
-  }
-
-  document.getElementById("clearAllBtn").addEventListener("click", () => {
-    selectedDocs.forEach(id => {
-      map.setFeatureState(
-        { source: "bathy", id },
-        { selected: false }
-      );
-    });
-    selectedDocs.clear();
-    updateSelectionUI();
+  map.addLayer({
+    id: "bathy-fill",
+    type: "fill",
+    source: "bathy",
+    paint: {
+      "fill-color": "#228B22",
+      "fill-opacity": 0.45
+    }
   });
 
-  /* ---------- Data layers ---------- */
-
-  map.on("load", () => {
-    map.addSource("bathy", {
-      type: "geojson",
-      data: "https://raw.githubusercontent.com/cavanaghg-chs/bathy_map/main/data/product-results.geojson",
-      promoteId: "documentId"
-    });
-
-    map.addLayer({
-      id: "bathy-fill",
-      type: "fill",
-      source: "bathy",
-      paint: {
-        "fill-color": "#228B22",
-        "fill-opacity": 0.45
-      }
-    });
-
-    map.addLayer({
-      id: "bathy-outline",
-      type: "line",
-      source: "bathy",
-      paint: {
-        "line-color": [
-          "case",
-          ["boolean", ["feature-state", "selected"], false], "#FFD700",
-          "#004d00"
-        ],
-        "line-width": 2
-      }
-    });
-
-    // ✅ Click polygon = toggle selection
-    map.on("click", "bathy-fill", e => {
-      const id = e.features[0].id;
-
-      if (selectedDocs.has(id)) {
-        removeSelection(id);
-        return;
-      }
-
-      selectedDocs.add(id);
-      map.setFeatureState(
-        { source: "bathy", id },
-        { selected: true }
-      );
-      updateSelectionUI();
-    });
+  map.addLayer({
+    id: "bathy-outline",
+    type: "line",
+    source: "bathy",
+    paint: {
+      "line-color": [
+        "case",
+        ["boolean", ["feature-state", "selected"], false], "#FFD700",
+        "#004d00"
+      ],
+      "line-width": 2
+    }
   });
+
+  // Cache features for spatial selection
+  map.once("idle", () => {
+    allFeatures = map.querySourceFeatures("bathy");
+  });
+
+  /* Hover tooltip */
+  const tooltip = new maplibregl.Popup({
+    closeButton: false,
+    closeOnClick: false
+  });
+
+  map.on("mousemove", "bathy-fill", e => {
+    const f = e.features[0];
+    tooltip
+      .setLngLat(e.lngLat)
+      .setHTML(
+        `<strong>${f.properties.documentId}</strong><br>${f.properties.statusDate}`
+      )
+      .addTo(map);
+  });
+
+  map.on("mouseleave", "bathy-fill", () => tooltip.remove());
+
+  /* Click select */
+  map.on("click", "bathy-fill", e => {
+    select(e.features[0].id);
+  });
+});
+
+/* ---------- Spatial selection ---------- */
+
+map.on("draw.create", () => {
+  const drawn = draw.getAll().features[0];
+  if (!drawn) return;
+
+  allFeatures.forEach(f => {
+    if (turf.booleanIntersects(drawn, f)) {
+      select(f.id);
+    }
+  });
+});
 </script>
+
+<!-- ✅ Turf (required for spatial selection) -->
+<script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
 
 </body>
 </html>
-``
