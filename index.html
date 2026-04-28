@@ -7,11 +7,7 @@
   <!-- ✅ MapLibre CSS -->
   <link
     rel="stylesheet"
-    href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css"
-  />
-
-  <style>
-    html, body, #map {
+    href="https://unpkg.com/maplibre-gl@3.6. html, body, #map {
       margin: 0;
       padding: 0;
       height: 100%;
@@ -80,9 +76,7 @@
 </div>
 
 <!-- ✅ MapLibre JS -->
-<script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
-
-<script>
+<script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibrept>
   /* ---------- Map ---------- */
 
   const isFrench =
@@ -180,7 +174,7 @@
     URL.revokeObjectURL(a.href);
   }
 
-  /* ---------- Data ---------- */
+  /* ---------- Data + Hover ---------- */
 
   map.on("load", () => {
     map.addSource("bathy", {
@@ -213,7 +207,27 @@
       }
     });
 
-    // ✅ Click polygon → toggle selection
+    /* ✅ Hover tooltip */
+    const tooltip = new maplibregl.Popup({
+      closeButton: false,
+      closeOnClick: false
+    });
+
+    map.on("mousemove", "bathy-fill", e => {
+      const f = e.features[0];
+      tooltip
+        .setLngLat(e.lngLat)
+        .setHTML(
+          `<strong>${f.properties.documentId}</strong><br>${f.properties.statusDate}`
+        )
+        .addTo(map);
+    });
+
+    map.on("mouseleave", "bathy-fill", () => {
+      tooltip.remove();
+    });
+
+    /* ✅ Click = toggle selection */
     map.on("click", "bathy-fill", e => {
       const id = e.features[0].id;
       if (selectedDocs.has(id)) {
