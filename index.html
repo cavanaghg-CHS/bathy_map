@@ -16,17 +16,72 @@
       padding: 0;
       height: 100%;
     }
+
+    /* Legend styling */
+    .legend {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      background: white;
+      padding: 10px 12px;
+      font-size: 13px;
+      line-height: 1.4em;
+      color: #333;
+      box-shadow: 0 0 15px rgba(0,0,0,0.2);
+      border-radius: 5px;
+    }
+
+    .legend-title {
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+
+    .legend-color {
+      width: 16px;
+      height: 16px;
+      margin-right: 8px;
+      border: 1px solid #555;
+      opacity: 0.45;
+    }
   </style>
 </head>
 
 <body>
+
 <div id="map"></div>
+
+<!-- Legend -->
+<div class="legend">
+  <div class="legend-title">Date</div>
+  <div class="legend-item">
+    <div class="legend-color" style="background:#99CC99;"></div>
+    1818 – 1939
+  </div>
+  <div class="legend-item">
+    <div class="legend-color" style="background:#66AA66;"></div>
+    1940 – 1969
+  </div>
+  <div class="legend-item">
+    <div class="legend-color" style="background:#228B22;"></div>
+    1970 – 1989
+  </div>
+  <div class="legend-item">
+    <div class="legend-color" style="background:#006400;"></div>
+    1990 – Present
+  </div>
+</div>
 
 <!-- MapLibre JS -->
 <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
 
 <script>
-  // ✅ Detect browser language (default = English)
+  // ✅ Detect browser language (English default)
   const isFrench =
     navigator.language &&
     navigator.language.toLowerCase().startsWith("fr");
@@ -38,53 +93,82 @@
   const STYLE_FR =
     "https://www.arcgis.com/sharing/rest/content/items/70e9deb5019d49cc88c6543887db9db5/resources/styles/root.json";
 
-  // ✅ Choose style
   const basemapStyle = isFrench ? STYLE_FR : STYLE_EN;
 
   // ✅ Create map
   const map = new maplibregl.Map({
     container: "map",
-    style: basemapStyle,
-    center: [-132.8, 53.7],
-    zoom: 6
+    style: basemapStyle
   });
 
   map.addControl(new maplibregl.NavigationControl());
 
-  // ✅ Load GeoJSON once style is ready
+  // ✅ Helper: compute GeoJSON bounds
+  function getGeoJSONBounds(geojson) {
+    let minX = Infinity, minY = Infinity;
+    let maxX = -Infinity, maxY = -Infinity;
+
+    geojson.features.forEach(f => {
+      const coords = f.geometry.coordinates.flat(2);
+      for (let i = 0; i < coords.length; i += 2) {
+        const x = coords[i];
+        const y = coords[i + 1];
+        minX = Math.min(minX, x);
+        minY = Math.min(minY, y);
+        maxX = Math.max(maxX, x);
+        maxY = Math.max(maxY, y);
+      }
+    });
+
+    return [[minX, minY], [maxX, maxY]];
+  }
+
   map.on("load", () => {
-    map.addSource("bathy", {
-      type: "geojson",
-      data: "https://raw.githubusercontent.com/cavanaghg-chs/bathy_map/main/data/product-results.geojson"
-    });
+    fetch("https://raw.githubusercontent.com/cavanaghg-chs/bathy_map/main/data/product-results.geojson")
+      .then(r => r.json())
+      .then(data => {
 
-    // Fill layer
-    map.addLayer({
-      id: "bathy-fill",
-      type: "fill",
-      source: "bathy",
-      paint: {
-        "fill-color": [
-          "case",
-          ["<", ["to-number", ["slice", ["get", "statusDate"], 0, 4]], 1940], "#99CC99",
-          ["<", ["to-number", ["slice", ["get", "statusDate"], 0, 4]], 1970], "#66AA66",
-          ["<", ["to-number", ["slice", ["get", "statusDate"], 0, 4]], 1990], "#228B22",
-          "#006400"
-        ],
-        "fill-opacity": 0.7
-      }
-    });
+        // ✅ Add source
+        map.addSource("bathy", {
+          type: "geojson",
+          data: data
+        });
 
-    // Outline layer
-    map.addLayer({
-      id: "bathy-outline",
-      type: "line",
-      source: "bathy",
-      paint: {
-        "line-color": "#004d00",
-        "line-width": 1.5
-      }
-    });
+        // ✅ Fit to GeoJSON extent
+        const bounds = getGeoJSONBounds(data);
+        map.fitBounds(bounds, {
+          padding: 40,
+          duration: 0
+        });
+
+        // ✅ Fill layer (more transparent)
+        map.addLayer({
+          id: "bathy-fill",
+          type: "fill",
+          source: "bathy",
+          paint: {
+            "fill-color": [
+              "case",
+              ["<", ["to-number", ["slice", ["get", "statusDate"], 0, 4]], 1940], "#99CC99",
+              ["<", ["to-number", ["slice", ["get", "statusDate"], 0, 4]], 1970], "#66AA66",
+              ["<", ["to-number", ["slice", ["get", "statusDate"], 0, 4]], 1990], "#228B22",
+              "#006400"
+            ],
+            "fill-opacity": 0.45
+          }
+        });
+
+        // ✅ Outline layer
+        map.addLayer({
+          id: "bathy-outline",
+          type: "line",
+          source: "bathy",
+          paint: {
+            "line-color": "#004d00",
+            "line-width": 1.2
+          }
+        });
+      });
   });
 </script>
 
