@@ -5,18 +5,38 @@
   <title>Bathy Map</title>
 
   <!-- MapLibre CSS -->
-  <link rel="stylesheet"
-        href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplib
-  <link rel="stylesheet"
-        href="https://unpkg.com/@mapbox/mapbox-gl-draw@1.5
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css"
+  />
+
+  <style>
     html, body, #map {
       margin: 0;
       padding: 0;
       height: 100%;
     }
 
-    .legend, .selection-panel {
+    /* Legend */
+    .legend {
       position: absolute;
+      bottom: 20px;
+      right: 20px;
+      background: white;
+      padding: 10px 12px;
+      font-size: 13px;
+      line-height: 1.4em;
+      box-shadow: 0 0 15px rgba(0,0,0,0.2);
+      border-radius: 5px;
+      z-index: 1;
+    }
+
+    /* Selection panel */
+    .selection-panel {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      width: 260px;
       background: white;
       padding: 10px;
       font-size: 13px;
@@ -25,19 +45,8 @@
       z-index: 1;
     }
 
-    .legend {
-      bottom: 20px;
-      right: 20px;
-    }
-
-    .selection-panel {
-      top: 20px;
-      right: 20px;
-      width: 260px;
-    }
-
     .selection-list {
-      max-height: 160px;
+      max-height: 180px;
       overflow-y: auto;
       margin-bottom: 8px;
     }
@@ -50,6 +59,7 @@
 
     button {
       cursor: pointer;
+      font-size: 12px;
     }
   </style>
 </head>
@@ -58,12 +68,14 @@
 
 <div id="map"></div>
 
+<!-- Selection panel -->
 <div class="selection-panel">
   <strong>Selected Documents</strong>
   <div id="selectionList" class="selection-list"></div>
   <button onclick="clearAllSelections()">Clear all</button>
 </div>
 
+<!-- Legend -->
 <div class="legend">
   <strong>Date</strong><br>
   <span style="color:#99CC99;">■</span> 1818–1939<br>
@@ -73,8 +85,10 @@
 </div>
 
 <!-- MapLibre JS -->
-<script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplib- ✅ Mapbox Draw JS (THIS WAS THE PROBLEM BEFORE) -->
-<script src="https://unpkg.com/@mapbox/mapbox-gl-draw@1.5.0/dist/mapbox-gl-draw.jscript>
+<script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+
+<script>
+  // Language detection
   const isFrench =
     navigator.language &&
     navigator.language.toLowerCase().startsWith("fr");
@@ -94,18 +108,8 @@
 
   map.addControl(new maplibregl.NavigationControl());
 
-  const draw = new MapboxDraw({
-    displayControlsDefault: false,
-    controls: {
-      polygon: true,
-      line_string: true,
-      trash: true
-    }
-  });
-
-  map.addControl(draw, "top-left");
-
   const selectedDocs = new Set();
+  let hoveredId = null;
 
   function updateSelectionUI() {
     const list = document.getElementById("selectionList");
@@ -113,8 +117,10 @@
     selectedDocs.forEach(id => {
       const row = document.createElement("div");
       row.className = "selection-item";
-      row.innerHTML = `<span>${id}</span>
-                       <button onclick="removeSelection('${id}')">✕</button>`;
+      row.innerHTML = `
+        <span>${id}</span>
+        <button onclick="removeSelection('${id}')">✕</button>
+      `;
       list.appendChild(row);
     });
   }
@@ -145,7 +151,13 @@
       type: "fill",
       source: "bathy",
       paint: {
-        "fill-color": "#228B22",
+        "fill-color": [
+          "case",
+          ["<", ["to-number", ["slice", ["get", "statusDate"], 0, 4]], 1940], "#99CC99",
+          ["<", ["to-number", ["slice", ["get", "statusDate"], 0, 4]], 1970], "#66AA66",
+          ["<", ["to-number", ["slice", ["get", "statusDate"], 0, 4]], 1990], "#228B22",
+          "#006400"
+        ],
         "fill-opacity": 0.45
       }
     });
@@ -158,10 +170,33 @@
         "line-color": [
           "case",
           ["boolean", ["feature-state", "selected"], false], "#FFD700",
+          ["boolean", ["feature-state", "hover"], false], "#00FFFF",
           "#004d00"
         ],
-        "line-width": 2
+        "line-width": [
+          "case",
+          ["boolean", ["feature-state", "selected"], false], 3,
+          ["boolean", ["feature-state", "hover"], false], 2,
+          1.2
+        ]
       }
+    });
+
+    map.on("mousemove", "bathy-fill", e => {
+      if (e.features.length) {
+        if (hoveredId !== null) {
+          map.setFeatureState({ source: "bathy", id: hoveredId }, { hover: false });
+        }
+        hoveredId = e.features[0].id;
+        map.setFeatureState({ source: "bathy", id: hoveredId }, { hover: true });
+      }
+    });
+
+    map.on("mouseleave", "bathy-fill", () => {
+      if (hoveredId !== null) {
+        map.setFeatureState({ source: "bathy", id: hoveredId }, { hover: false });
+      }
+      hoveredId = null;
     });
 
     map.on("click", "bathy-fill", e => {
@@ -171,9 +206,18 @@
         map.setFeatureState({ source: "bathy", id }, { selected: true });
         updateSelectionUI();
       }
+
+      new maplibregl.Popup()
+        .setLngLat(e.lngLat)
+        .setHTML(
+          `<strong>Document ID:</strong> ${e.features[0].properties.documentId}<br>
+           <strong>Date:</strong> ${e.features[0].properties.statusDate}`
+        )
+        .addTo(map);
     });
   });
 </script>
 
 </body>
 </html>
+``
