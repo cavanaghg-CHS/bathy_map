@@ -5,14 +5,13 @@
   <title>Bathy Map</title>
 
   <!-- MapLibre CSS -->
-  https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css
-
-  <!-- Mapbox Draw CSS -->
-  https://unpkg.com/@mapbox/mapbox-gl-draw@1.5.0/dist/mapbox-gl-draw.css
-
-  <style>
-    html, body, #map {
-      margin: 0;
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/maplibre-gl@3.6.2/dist/map-->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/@mapbox/mapbox-gl-draw@1.5.0/dist/mapbox-gl-draw.css"
+  margin: 0;
       padding: 0;
       height: 100%;
     }
@@ -28,6 +27,7 @@
       line-height: 1.4em;
       box-shadow: 0 0 15px rgba(0,0,0,0.2);
       border-radius: 5px;
+      z-index: 1;
     }
 
     /* Selection panel */
@@ -41,6 +41,7 @@
       font-size: 13px;
       box-shadow: 0 0 15px rgba(0,0,0,0.2);
       border-radius: 5px;
+      z-index: 1;
     }
 
     .selection-panel h3 {
@@ -99,18 +100,17 @@
 </div>
 
 <!-- MapLibre JS -->
-https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js
-
-<!-- Mapbox Draw -->
-https://unpkg.com/@mapbox/mapbox-gl-draw@1.5.0/dist/mapbox-gl-draw.js
-
+<script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js Draw -->
+<script src="https://unpkg.com/@mapbox/mapbox-gl-draw@1.5.0/dist/mapbox-gl-draw
 <script>
+  // ✅ Browser language detection (EN default)
   const isFrench =
     navigator.language &&
     navigator.language.toLowerCase().startsWith("fr");
 
   const STYLE_EN =
     "https://www.arcgis.com/sharing/rest/content/items/800d755712e8415aab301b9d55bc2800/resources/styles/root.json";
+
   const STYLE_FR =
     "https://www.arcgis.com/sharing/rest/content/items/70e9deb5019d49cc88c6543887db9db5/resources/styles/root.json";
 
@@ -126,7 +126,11 @@ https://unpkg.com/@mapbox/mapbox-gl-draw@1.5.0/dist/mapbox-gl-draw.js
 
   const draw = new MapboxDraw({
     displayControlsDefault: false,
-    controls: { polygon: true, line_string: true, trash: true }
+    controls: {
+      polygon: true,
+      line_string: true,
+      trash: true
+    }
   });
   map.addControl(draw, "top-left");
 
@@ -139,12 +143,10 @@ https://unpkg.com/@mapbox/mapbox-gl-draw@1.5.0/dist/mapbox-gl-draw.js
     selectedDocs.forEach(id => {
       const row = document.createElement("div");
       row.className = "selection-item";
-
       row.innerHTML = `
         <span>${id}</span>
         <button onclick="removeSelection('${id}')">✕</button>
       `;
-
       list.appendChild(row);
     });
   }
@@ -248,4 +250,3 @@ https://unpkg.com/@mapbox/mapbox-gl-draw@1.5.0/dist/mapbox-gl-draw.js
 
 </body>
 </html>
-``
