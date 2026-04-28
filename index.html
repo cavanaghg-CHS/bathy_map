@@ -17,7 +17,7 @@
       height: 100%;
     }
 
-    /* ✅ Selection panel (TOP‑LEFT) */
+    /* Selection panel (TOP‑LEFT) */
     .selection-panel {
       position: absolute;
       top: 10px;
@@ -28,7 +28,7 @@
       font-size: 13px;
       box-shadow: 0 0 15px rgba(0,0,0,0.2);
       border-radius: 5px;
-      z-index: 2;
+      z-index: 10;
     }
 
     .selection-panel h3 {
@@ -75,7 +75,7 @@
       line-height: 1.4em;
       box-shadow: 0 0 15px rgba(0,0,0,0.2);
       border-radius: 5px;
-      z-index: 1;
+      z-index: 5;
     }
   </style>
 </head>
@@ -84,7 +84,7 @@
 
 <div id="map"></div>
 
-<!-- ✅ Selection panel -->
+<!-- Selection panel -->
 <div class="selection-panel">
   <h3>Selected Documents</h3>
   <div id="selectionList" class="selection-list"></div>
@@ -136,10 +136,20 @@
     selectedDocs.forEach(id => {
       const row = document.createElement("div");
       row.className = "selection-item";
-      row.innerHTML = `
-        <span>${id}</span>
-        <button data-id="${id}">✕</button>
-      `;
+
+      const label = document.createElement("span");
+      label.textContent = id;
+
+      const btn = document.createElement("button");
+      btn.textContent = "✕";
+
+      // ✅ DIRECT event binding (this always works)
+      btn.addEventListener("click", () => {
+        removeSelection(id);
+      });
+
+      row.appendChild(label);
+      row.appendChild(btn);
       selectionListEl.appendChild(row);
     });
   }
@@ -155,15 +165,6 @@
     updateSelectionUI();
   }
 
-  /* ✅ Event delegation for ✕ buttons */
-  selectionListEl.addEventListener("click", e => {
-    if (e.target.tagName === "BUTTON") {
-      const id = e.target.getAttribute("data-id");
-      removeSelection(id);
-    }
-  });
-
-  /* ✅ Clear all */
   document.getElementById("clearAllBtn").addEventListener("click", () => {
     selectedDocs.forEach(id => {
       map.setFeatureState(
@@ -189,13 +190,7 @@
       type: "fill",
       source: "bathy",
       paint: {
-        "fill-color": [
-          "case",
-          ["<", ["to-number", ["slice", ["get", "statusDate"], 0, 4]], 1940], "#99CC99",
-          ["<", ["to-number", ["slice", ["get", "statusDate"], 0, 4]], 1970], "#66AA66",
-          ["<", ["to-number", ["slice", ["get", "statusDate"], 0, 4]], 1990], "#228B22",
-          "#006400"
-        ],
+        "fill-color": "#228B22",
         "fill-opacity": 0.45
       }
     });
@@ -214,7 +209,7 @@
       }
     });
 
-    /* ✅ Click = toggle selection */
+    // ✅ Click polygon = toggle selection
     map.on("click", "bathy-fill", e => {
       const id = e.features[0].id;
 
@@ -235,3 +230,4 @@
 
 </body>
 </html>
+``
