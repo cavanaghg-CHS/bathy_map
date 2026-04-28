@@ -4,10 +4,11 @@
   <meta charset="utf-8" />
   <title>Bathy Map</title>
 
-  <!-- MapLibre CSS -->
-  <link rel="stylesheet"
-        href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-glink rel="stylesheet"
-        href="https://unpkg.com/@mapbox/mapbox-gl-draw@1.5.0/dist/mapbox-gl-draw{
+  <!-- ✅ MapLibre CSS -->
+  https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css
+
+  <style>
+    html, body, #map {
       margin: 0;
       padding: 0;
       height: 100%;
@@ -17,7 +18,7 @@
       position: absolute;
       top: 10px;
       left: 10px;
-      width: 280px;
+      width: 260px;
       background: white;
       padding: 10px;
       font-size: 13px;
@@ -27,7 +28,7 @@
     }
 
     .selection-list {
-      max-height: 160px;
+      max-height: 180px;
       overflow-y: auto;
       margin-bottom: 8px;
     }
@@ -38,9 +39,12 @@
       margin-bottom: 4px;
     }
 
-    button {
-      font-size: 12px;
+    .selection-item button {
+      background: none;
+      border: none;
+      color: #c00;
       cursor: pointer;
+      font-size: 12px;
     }
 
     .legend {
@@ -61,15 +65,13 @@
 <div id="map"></div>
 
 <div class="selection-panel">
-  <strong id="panelTitle"></strong>
+  <strong>Selected Documents</strong>
   <div id="selectionList" class="selection-list"></div>
-  <button id="clearBtn"></button>
-  <button id="csvBtn"></button>
-  <button id="jsonBtn"></button>
+  <button id="clearBtn">Clear all</button>
 </div>
 
 <div class="legend">
-  <strong id="legendTitle"></strong><br>
+  <strong>Date</strong><br>
   ■ 1818–1939<br>
   ■ 1940–1969<br>
   ■ 1970–1989<br>
@@ -77,174 +79,101 @@
 </div>
 
 <!-- ✅ MapLibre JS -->
-<script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.jsox Draw JS -->
-<script src="https://unpkg.com/@mapbox/mapbox-gl-draw@1.5.0/dist/mapbox-gl-draw.js-- ✅ Turf JS (required for spatial selection) -->
-<script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
+https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js
 
 <script>
-/* ---------- Language ---------- */
+  const isFrench =
+    navigator.language &&
+    navigator.language.toLowerCase().startsWith("fr");
 
-const isFrench = navigator.language?.toLowerCase().startsWith("fr");
+  const STYLE_EN =
+    "https://www.arcgis.com/sharing/rest/content/items/800d755712e8415aab301b9d55bc2800/resources/styles/root.json";
+  const STYLE_FR =
+    "https://www.arcgis.com/sharing/rest/content/items/70e9deb5019d49cc88c6543887db9db5/resources/styles/root.json";
 
-const UI = isFrench ? {
-  panel: "Documents sélectionnés",
-  clear: "Tout effacer",
-  csv: "Exporter CSV",
-  json: "Exporter JSON",
-  legend: "Date"
-} : {
-  panel: "Selected Documents",
-  clear: "Clear all",
-  csv: "Export CSV",
-  json: "Export JSON",
-  legend: "Date"
-};
-
-panelTitle.textContent = UI.panel;
-clearBtn.textContent = UI.clear;
-csvBtn.textContent = UI.csv;
-jsonBtn.textContent = UI.json;
-legendTitle.textContent = UI.legend;
-
-/* ---------- Map ---------- */
-
-const STYLE_EN =
-  "https://www.arcgis.com/sharing/rest/content/items/800d755712e8415aab301b9d55bc2800/resources/styles/root.json";
-const STYLE_FR =
-  "https://www.arcgis.com/sharing/rest/content/items/70e9deb5019d49cc88c6543887db9db5/resources/styles/root.json";
-
-const map = new maplibregl.Map({
-  container: "map",
-  style: isFrench ? STYLE_FR : STYLE_EN,
-  center: [-96, 62],
-  zoom: 3,
-  attributionControl: false
-});
-
-map.addControl(new maplibregl.NavigationControl());
-
-/* ---------- Draw ---------- */
-
-const draw = new MapboxDraw({
-  displayControlsDefault: false,
-  controls: { polygon: true, trash: true }
-});
-map.addControl(draw, "top-left");
-
-/* ---------- Selection ---------- */
-
-const selectedDocs = new Set();
-const listEl = document.getElementById("selectionList");
-
-function updateList() {
-  listEl.innerHTML = "";
-  selectedDocs.forEach(id => {
-    const row = document.createElement("div");
-    row.className = "selection-item";
-    row.innerHTML = `<span>${id}</span>`;
-    const btn = document.createElement("button");
-    btn.textContent = "✕";
-    btn.onclick = () => deselect(id);
-    row.appendChild(btn);
-    listEl.appendChild(row);
-  });
-}
-
-function select(id) {
-  if (selectedDocs.has(id)) return;
-  selectedDocs.add(id);
-  map.setFeatureState({ source: "bathy", id }, { selected: true });
-  updateList();
-}
-
-function deselect(id) {
-  selectedDocs.delete(id);
-  map.setFeatureState({ source: "bathy", id }, { selected: false });
-  updateList();
-}
-
-/* ---------- Export ---------- */
-
-csvBtn.onclick = () => {
-  const blob = new Blob([Array.from(selectedDocs).join("\n")], { type: "text/csv" });
-  download(blob, "selected_documents.csv");
-};
-
-jsonBtn.onclick = () => {
-  const blob = new Blob(
-    [JSON.stringify(Array.from(selectedDocs), null, 2)],
-    { type: "application/json" }
-  );
-  download(blob, "selected_documents.json");
-};
-
-function download(blob, name) {
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = name;
-  a.click();
-  URL.revokeObjectURL(a.href);
-}
-
-clearBtn.onclick = () => {
-  selectedDocs.forEach(id =>
-    map.setFeatureState({ source: "bathy", id }, { selected: false })
-  );
-  selectedDocs.clear();
-  updateList();
-};
-
-/* ---------- Data ---------- */
-
-let cachedFeatures = [];
-
-map.on("load", () => {
-  map.addSource("bathy", {
-    type: "geojson",
-    data: "https://raw.githubusercontent.com/cavanaghg-chs/bathy_map/main/data/product-results.geojson",
-    promoteId: "documentId"
+  const map = new maplibregl.Map({
+    container: "map",
+    style: isFrench ? STYLE_FR : STYLE_EN,
+    center: [-96, 62],
+    zoom: 3,
+    attributionControl: false
   });
 
-  map.addLayer({
-    id: "bathy-fill",
-    type: "fill",
-    source: "bathy",
-    paint: { "fill-color": "#228B22", "fill-opacity": 0.45 }
+  map.addControl(new maplibregl.NavigationControl());
+
+  const selectedDocs = new Set();
+  const listEl = document.getElementById("selectionList");
+
+  function updateList() {
+    listEl.innerHTML = "";
+    selectedDocs.forEach(id => {
+      const row = document.createElement("div");
+      row.className = "selection-item";
+
+      const label = document.createElement("span");
+      label.textContent = id;
+
+      const btn = document.createElement("button");
+      btn.textContent = "✕";
+      btn.addEventListener("click", () => deselect(id));
+
+      row.appendChild(label);
+      row.appendChild(btn);
+      listEl.appendChild(row);
+    });
+  }
+
+  function select(id) {
+    if (selectedDocs.has(id)) return;
+    selectedDocs.add(id);
+    map.setFeatureState({ source: "bathy", id }, { selected: true });
+    updateList();
+  }
+
+  function deselect(id) {
+    selectedDocs.delete(id);
+    map.setFeatureState({ source: "bathy", id }, { selected: false });
+    updateList();
+  }
+
+  document.getElementById("clearBtn").addEventListener("click", () => {
+    selectedDocs.forEach(id =>
+      map.setFeatureState({ source: "bathy", id }, { selected: false })
+    );
+    selectedDocs.clear();
+    updateList();
   });
 
-  map.addLayer({
-    id: "bathy-outline",
-    type: "line",
-    source: "bathy",
-    paint: {
-      "line-color": [
-        "case",
-        ["boolean", ["feature-state", "selected"], false], "#FFD700",
-        "#004d00"
-      ],
-      "line-width": 2
-    }
+  map.on("load", () => {
+    map.addSource("bathy", {
+      type: "geojson",
+      data: "https://raw.githubusercontent.com/cavanaghg-chs/bathy_map/main/data/product-results.geojson",
+      promoteId: "documentId"
+    });
+
+    map.addLayer({
+      id: "bathy-fill",
+      type: "fill",
+      source: "bathy",
+      paint: { "fill-color": "#228B22", "fill-opacity": 0.45 }
+    });
+
+    map.addLayer({
+      id: "bathy-outline",
+      type: "line",
+      source: "bathy",
+      paint: {
+        "line-color": [
+          "case",
+          ["boolean", ["feature-state", "selected"], false], "#FFD700",
+          "#004d00"
+        ],
+        "line-width": 2
+      }
+    });
+
+    map.on("click", "bathy-fill", e => select(e.features[0].id));
   });
-
-  map.once("idle", () => {
-    cachedFeatures = map.querySourceFeatures("bathy");
-  });
-
-  map.on("click", "bathy-fill", e => select(e.features[0].id));
-});
-
-/* ---------- Spatial selection ---------- */
-
-map.on("draw.create", () => {
-  const drawn = draw.getAll().features[0];
-  if (!drawn) return;
-
-  cachedFeatures.forEach(f => {
-    if (turf.booleanIntersects(drawn, f)) {
-      select(f.id);
-    }
-  });
-});
 </script>
 
 </body>
