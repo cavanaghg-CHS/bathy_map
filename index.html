@@ -5,10 +5,10 @@
   <title>Bathy Map</title>
 
   <!-- MapLibre CSS -->
-  <link
-    href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css"
-    rel="stylesheet"
-  />
+  https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css
+
+  <!-- Mapbox Draw CSS -->
+  https://unpkg.com/@mapbox/mapbox-gl-draw@1.5.0/dist/mapbox-gl-draw.css
 
   <style>
     html, body, #map {
@@ -26,28 +26,54 @@
       padding: 10px 12px;
       font-size: 13px;
       line-height: 1.4em;
-      color: #333;
       box-shadow: 0 0 15px rgba(0,0,0,0.2);
       border-radius: 5px;
     }
 
-    .legend-title {
-      font-weight: bold;
-      margin-bottom: 6px;
+    /* Selection panel */
+    .selection-panel {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      width: 260px;
+      background: white;
+      padding: 10px;
+      font-size: 13px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.2);
+      border-radius: 5px;
     }
 
-    .legend-item {
+    .selection-panel h3 {
+      margin: 0 0 6px 0;
+      font-size: 14px;
+    }
+
+    .selection-list {
+      max-height: 180px;
+      overflow-y: auto;
+      margin-bottom: 8px;
+    }
+
+    .selection-item {
       display: flex;
+      justify-content: space-between;
       align-items: center;
       margin-bottom: 4px;
     }
 
-    .legend-color {
-      width: 16px;
-      height: 16px;
-      margin-right: 8px;
-      border: 1px solid #555;
-      opacity: 0.45;
+    .selection-item button {
+      background: none;
+      border: none;
+      color: #c00;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .clear-all {
+      width: 100%;
+      padding: 4px;
+      font-size: 12px;
+      cursor: pointer;
     }
   </style>
 </head>
@@ -56,66 +82,96 @@
 
 <div id="map"></div>
 
+<!-- Selection panel -->
+<div class="selection-panel">
+  <h3>Selected Documents</h3>
+  <div id="selectionList" class="selection-list"></div>
+  <button class="clear-all" onclick="clearAllSelections()">Clear all</button>
+</div>
+
 <!-- Legend -->
 <div class="legend">
-  <div class="legend-title">Date</div>
-  <div class="legend-item">
-    <div class="legend-color" style="background:#99CC99;"></div>
-    1818 – 1939
-  </div>
-  <div class="legend-item">
-    <div class="legend-color" style="background:#66AA66;"></div>
-    1940 – 1969
-  </div>
-  <div class="legend-item">
-    <div class="legend-color" style="background:#228B22;"></div>
-    1970 – 1989
-  </div>
-  <div class="legend-item">
-    <div class="legend-color" style="background:#006400;"></div>
-    1990 – Present
-  </div>
+  <strong>Date</strong><br>
+  <span style="color:#99CC99;">■</span> 1818–1939<br>
+  <span style="color:#66AA66;">■</span> 1940–1969<br>
+  <span style="color:#228B22;">■</span> 1970–1989<br>
+  <span style="color:#006400;">■</span> 1990–Present
 </div>
 
 <!-- MapLibre JS -->
-<script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js
+
+<!-- Mapbox Draw -->
+https://unpkg.com/@mapbox/mapbox-gl-draw@1.5.0/dist/mapbox-gl-draw.js
 
 <script>
-  // ✅ Browser language detection (EN default)
   const isFrench =
     navigator.language &&
     navigator.language.toLowerCase().startsWith("fr");
 
   const STYLE_EN =
     "https://www.arcgis.com/sharing/rest/content/items/800d755712e8415aab301b9d55bc2800/resources/styles/root.json";
-
   const STYLE_FR =
     "https://www.arcgis.com/sharing/rest/content/items/70e9deb5019d49cc88c6543887db9db5/resources/styles/root.json";
 
-  const basemapStyle = isFrench ? STYLE_FR : STYLE_EN;
-
-  // ✅ Create map (Canada default view)
   const map = new maplibregl.Map({
     container: "map",
-    style: basemapStyle,
+    style: isFrench ? STYLE_FR : STYLE_EN,
     center: [-96, 62],
-    zoom: 3
+    zoom: 3,
+    attributionControl: false
   });
 
   map.addControl(new maplibregl.NavigationControl());
 
+  const draw = new MapboxDraw({
+    displayControlsDefault: false,
+    controls: { polygon: true, line_string: true, trash: true }
+  });
+  map.addControl(draw, "top-left");
+
+  const selectedDocs = new Set();
+
+  function updateSelectionUI() {
+    const list = document.getElementById("selectionList");
+    list.innerHTML = "";
+
+    selectedDocs.forEach(id => {
+      const row = document.createElement("div");
+      row.className = "selection-item";
+
+      row.innerHTML = `
+        <span>${id}</span>
+        <button onclick="removeSelection('${id}')">✕</button>
+      `;
+
+      list.appendChild(row);
+    });
+  }
+
+  function removeSelection(id) {
+    selectedDocs.delete(id);
+    map.setFeatureState({ source: "bathy", id }, { selected: false });
+    updateSelectionUI();
+  }
+
+  function clearAllSelections() {
+    selectedDocs.forEach(id => {
+      map.setFeatureState({ source: "bathy", id }, { selected: false });
+    });
+    selectedDocs.clear();
+    updateSelectionUI();
+  }
+
   let hoveredId = null;
-  let selectedId = null;
 
   map.on("load", () => {
-    // ✅ Add GeoJSON
     map.addSource("bathy", {
       type: "geojson",
       data: "https://raw.githubusercontent.com/cavanaghg-chs/bathy_map/main/data/product-results.geojson",
       promoteId: "documentId"
     });
 
-    // ✅ Fill layer
     map.addLayer({
       id: "bathy-fill",
       type: "fill",
@@ -132,7 +188,6 @@
       }
     });
 
-    // ✅ Outline with hover / selection styling
     map.addLayer({
       id: "bathy-outline",
       type: "line",
@@ -153,67 +208,40 @@
       }
     });
 
-    // ✅ Hover interaction
     map.on("mousemove", "bathy-fill", e => {
       if (e.features.length > 0) {
         if (hoveredId !== null) {
-          map.setFeatureState(
-            { source: "bathy", id: hoveredId },
-            { hover: false }
-          );
+          map.setFeatureState({ source: "bathy", id: hoveredId }, { hover: false });
         }
         hoveredId = e.features[0].id;
-        map.setFeatureState(
-          { source: "bathy", id: hoveredId },
-          { hover: true }
-        );
+        map.setFeatureState({ source: "bathy", id: hoveredId }, { hover: true });
       }
     });
 
     map.on("mouseleave", "bathy-fill", () => {
       if (hoveredId !== null) {
-        map.setFeatureState(
-          { source: "bathy", id: hoveredId },
-          { hover: false }
-        );
+        map.setFeatureState({ source: "bathy", id: hoveredId }, { hover: false });
       }
       hoveredId = null;
     });
 
-    // ✅ Click interaction + popup
     map.on("click", "bathy-fill", e => {
-      const feature = e.features[0];
+      const f = e.features[0];
+      const id = f.id;
 
-      if (selectedId !== null) {
-        map.setFeatureState(
-          { source: "bathy", id: selectedId },
-          { selected: false }
-        );
+      if (!selectedDocs.has(id)) {
+        selectedDocs.add(id);
+        map.setFeatureState({ source: "bathy", id }, { selected: true });
+        updateSelectionUI();
       }
-
-      selectedId = feature.id;
-
-      map.setFeatureState(
-        { source: "bathy", id: selectedId },
-        { selected: true }
-      );
 
       new maplibregl.Popup()
         .setLngLat(e.lngLat)
         .setHTML(
-          `<strong>Document ID:</strong> ${feature.properties.documentId}<br>
-           <strong>Date:</strong> ${feature.properties.statusDate}`
+          `<strong>Document ID:</strong> ${f.properties.documentId}<br>
+           <strong>Date:</strong> ${f.properties.statusDate}`
         )
         .addTo(map);
-    });
-
-    // ✅ Cursor feedback
-    map.on("mouseenter", "bathy-fill", () => {
-      map.getCanvas().style.cursor = "pointer";
-    });
-
-    map.on("mouseleave", "bathy-fill", () => {
-      map.getCanvas().style.cursor = "";
     });
   });
 </script>
