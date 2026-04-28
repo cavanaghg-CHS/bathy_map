@@ -1,6 +1,60 @@
 <!DOCTYPE html>
-<html>
-  <body>
-    <h1>TEST</h1>
-  </body>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Bathy Map</title>
+
+  <!-- ✅ MapLibre CSS -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css"
+  />
+
+  <style>
+    html, body, #map {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+    }
+  </style>
+</head>
+
+<body>
+
+<div id="map"></div>
+
+<!-- ✅ MapLibre JS -->
+<script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+
+<script>
+  // ✅ Create the map
+  const map = new maplibregl.Map({
+    container: "map",
+    style: "https://demotiles.maplibre.org/style.json",
+    center: [-96, 62],
+    zoom: 3
+  });
+
+  map.addControl(new maplibregl.NavigationControl());
+
+  // ✅ Load your GeoJSON
+  map.on("load", () => {
+    map.addSource("bathy", {
+      type: "geojson",
+      data: "https://raw.githubusercontent.com/cavanaghg-chs/bathy_map/main/data/product-results.geojson"
+    });
+
+    map.addLayer({
+      id: "bathy-fill",
+      type: "fill",
+      source: "bathy",
+      paint: {
+        "fill-color": "#228B22",
+        "fill-opacity": 0.5
+      }
+    });
+  });
+</script>
+
+</body>
 </html>
