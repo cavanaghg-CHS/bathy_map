@@ -22,7 +22,6 @@
       height: 100%;
     }
 
-    /* Legend styling */
     .legend {
       background: white;
       padding: 10px;
@@ -50,7 +49,7 @@
 <!-- Leaflet -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-<!-- Esri Leaflet (core) -->
+<!-- Esri Leaflet -->
 <script src="https://unpkg.com/esri-leaflet@3.0.12/dist/esri-leaflet.js"></script>
 
 <!-- Esri Leaflet Vector -->
@@ -60,8 +59,8 @@
   // Create map
   const map = L.map("map").setView([53.7, -132.8], 6);
 
-  // ✅ Esri Vector Basemap using style JSON
-  L.esri.Vector.vectorBasemapLayer(
+  // ✅ CORRECT: load vector basemap from style JSON
+  L.esri.Vector.vectorTileLayer(
     "https://www.arcgis.com/sharing/rest/content/items/800d755712e8415aab301b9d55bc2800/resources/styles/root.json",
     {
       attribution: "© Esri"
@@ -88,9 +87,9 @@
 
   // Load GeoJSON
   fetch("https://raw.githubusercontent.com/cavanaghg-chs/bathy_map/main/data/product-results.geojson")
-    .then(response => response.json())
+    .then(r => r.json())
     .then(data => {
-      const geojsonLayer = L.geoJSON(data, {
+      const layer = L.geoJSON(data, {
         style: styleFeature,
         onEachFeature: (feature, layer) => {
           layer.bindPopup(
@@ -100,7 +99,7 @@
         }
       }).addTo(map);
 
-      map.fitBounds(geojsonLayer.getBounds());
+      map.fitBounds(layer.getBounds());
     })
     .catch(err => console.error("GeoJSON load error:", err));
 
@@ -132,4 +131,3 @@
 
 </body>
 </html>
-``
