@@ -88,7 +88,7 @@
 <div class="selection-panel">
   <h3>Selected Documents</h3>
   <div id="selectionList" class="selection-list"></div>
-  <button class="clear-all" onclick="clearAllSelections()">Clear all</button>
+  <button id="clearAllBtn" class="clear-all">Clear all</button>
 </div>
 
 <!-- Legend -->
@@ -104,7 +104,8 @@
 <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
 
 <script>
-  // ✅ Browser language detection (English default)
+  /* ---------- Map setup ---------- */
+
   const isFrench =
     navigator.language &&
     navigator.language.toLowerCase().startsWith("fr");
@@ -124,21 +125,22 @@
 
   map.addControl(new maplibregl.NavigationControl());
 
+  /* ---------- Selection state ---------- */
+
   const selectedDocs = new Set();
-  let hoveredId = null;
+  const selectionListEl = document.getElementById("selectionList");
 
   function updateSelectionUI() {
-    const list = document.getElementById("selectionList");
-    list.innerHTML = "";
+    selectionListEl.innerHTML = "";
 
     selectedDocs.forEach(id => {
       const row = document.createElement("div");
       row.className = "selection-item";
       row.innerHTML = `
         <span>${id}</span>
-        <button onclick="removeSelection('${id}')">✕</button>
+        <button data-id="${id}">✕</button>
       `;
-      list.appendChild(row);
+      selectionListEl.appendChild(row);
     });
   }
 
@@ -153,10 +155,16 @@
     updateSelectionUI();
   }
 
-  // ✅ REQUIRED so ✕ buttons work
-  window.removeSelection = removeSelection;
+  /* ✅ Event delegation for ✕ buttons */
+  selectionListEl.addEventListener("click", e => {
+    if (e.target.tagName === "BUTTON") {
+      const id = e.target.getAttribute("data-id");
+      removeSelection(id);
+    }
+  });
 
-  function clearAllSelections() {
+  /* ✅ Clear all */
+  document.getElementById("clearAllBtn").addEventListener("click", () => {
     selectedDocs.forEach(id => {
       map.setFeatureState(
         { source: "bathy", id },
@@ -165,10 +173,9 @@
     });
     selectedDocs.clear();
     updateSelectionUI();
-  }
+  });
 
-  // (optional but consistent)
-  window.clearAllSelections = clearAllSelections;
+  /* ---------- Data layers ---------- */
 
   map.on("load", () => {
     map.addSource("bathy", {
@@ -201,50 +208,15 @@
         "line-color": [
           "case",
           ["boolean", ["feature-state", "selected"], false], "#FFD700",
-          ["boolean", ["feature-state", "hover"], false], "#00FFFF",
           "#004d00"
         ],
-        "line-width": [
-          "case",
-          ["boolean", ["feature-state", "selected"], false], 3,
-          ["boolean", ["feature-state", "hover"], false], 2,
-          1.2
-        ]
+        "line-width": 2
       }
     });
 
-    // Hover highlight
-    map.on("mousemove", "bathy-fill", e => {
-      if (!e.features.length) return;
-
-      if (hoveredId !== null) {
-        map.setFeatureState(
-          { source: "bathy", id: hoveredId },
-          { hover: false }
-        );
-      }
-
-      hoveredId = e.features[0].id;
-      map.setFeatureState(
-        { source: "bathy", id: hoveredId },
-        { hover: true }
-      );
-    });
-
-    map.on("mouseleave", "bathy-fill", () => {
-      if (hoveredId !== null) {
-        map.setFeatureState(
-          { source: "bathy", id: hoveredId },
-          { hover: false }
-        );
-      }
-      hoveredId = null;
-    });
-
-    // ✅ Click = toggle selection
+    /* ✅ Click = toggle selection */
     map.on("click", "bathy-fill", e => {
-      const feature = e.features[0];
-      const id = feature.id;
+      const id = e.features[0].id;
 
       if (selectedDocs.has(id)) {
         removeSelection(id);
