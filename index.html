@@ -26,23 +26,39 @@
 <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
 
 <script>
-  // ✅ Create map with Esri vector style
+  // ✅ Detect browser language (default = English)
+  const isFrench =
+    navigator.language &&
+    navigator.language.toLowerCase().startsWith("fr");
+
+  // ✅ Esri vector styles
+  const STYLE_EN =
+    "https://www.arcgis.com/sharing/rest/content/items/800d755712e8415aab301b9d55bc2800/resources/styles/root.json";
+
+  const STYLE_FR =
+    "https://www.arcgis.com/sharing/rest/content/items/70e9deb5019d49cc88c6543887db9db5/resources/styles/root.json";
+
+  // ✅ Choose style
+  const basemapStyle = isFrench ? STYLE_FR : STYLE_EN;
+
+  // ✅ Create map
   const map = new maplibregl.Map({
     container: "map",
-    style: "https://www.arcgis.com/sharing/rest/content/items/800d755712e8415aab301b9d55bc2800/resources/styles/root.json",
+    style: basemapStyle,
     center: [-132.8, 53.7],
     zoom: 6
   });
 
   map.addControl(new maplibregl.NavigationControl());
 
-  // ✅ Load your GeoJSON once the style is ready
+  // ✅ Load GeoJSON once style is ready
   map.on("load", () => {
     map.addSource("bathy", {
       type: "geojson",
       data: "https://raw.githubusercontent.com/cavanaghg-chs/bathy_map/main/data/product-results.geojson"
     });
 
+    // Fill layer
     map.addLayer({
       id: "bathy-fill",
       type: "fill",
@@ -59,6 +75,7 @@
       }
     });
 
+    // Outline layer
     map.addLayer({
       id: "bathy-outline",
       type: "line",
@@ -70,6 +87,6 @@
     });
   });
 </script>
+
 </body>
 </html>
-``
