@@ -37,7 +37,7 @@
     }
 
     .selection-list {
-      max-height: 180px;
+      max-height: 160px;
       overflow-y: auto;
       margin-bottom: 8px;
     }
@@ -57,8 +57,9 @@
       font-size: 12px;
     }
 
-    .clear-all {
+    .action-btn {
       width: 100%;
+      margin-top: 4px;
       font-size: 12px;
       cursor: pointer;
     }
@@ -73,14 +74,16 @@
 <div class="selection-panel">
   <h3>Selected Documents</h3>
   <div id="selectionList" class="selection-list"></div>
-  <button id="clearBtn" class="clear-all">Clear all</button>
+  <button id="clearBtn" class="action-btn">Clear all</button>
+  <button id="exportCsvBtn" class="action-btn">Export CSV</button>
+  <button id="exportJsonBtn" class="action-btn">Export JSON</button>
 </div>
 
 <!-- ✅ MapLibre JS -->
 <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
 
 <script>
-  /* ---------- Language ---------- */
+  /* ---------- Map ---------- */
 
   const isFrench =
     navigator.language &&
@@ -90,8 +93,6 @@
     "https://www.arcgis.com/sharing/rest/content/items/800d755712e8415aab301b9d55bc2800/resources/styles/root.json";
   const STYLE_FR =
     "https://www.arcgis.com/sharing/rest/content/items/70e9deb5019d49cc88c6543887db9db5/resources/styles/root.json";
-
-  /* ---------- Map ---------- */
 
   const map = new maplibregl.Map({
     container: "map",
@@ -110,7 +111,6 @@
 
   function updateList() {
     listEl.innerHTML = "";
-
     selectedDocs.forEach(id => {
       const row = document.createElement("div");
       row.className = "selection-item";
@@ -158,6 +158,27 @@
     selectedDocs.clear();
     updateList();
   });
+
+  /* ---------- Export ---------- */
+
+  document.getElementById("exportCsvBtn").addEventListener("click", () => {
+    const csv = Array.from(selectedDocs).join("\n");
+    download(csv, "selected_documents.csv", "text/csv");
+  });
+
+  document.getElementById("exportJsonBtn").addEventListener("click", () => {
+    const json = JSON.stringify(Array.from(selectedDocs), null, 2);
+    download(json, "selected_documents.json", "application/json");
+  });
+
+  function download(content, filename, type) {
+    const blob = new Blob([content], { type });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
 
   /* ---------- Data ---------- */
 
