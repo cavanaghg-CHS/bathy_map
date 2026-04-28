@@ -4,17 +4,15 @@
   <meta charset="utf-8" />
   <title>Bathy Map</title>
 
-  <!-- ✅ MapLibre CSS -->
+  <!-- MapLibre CSS -->
   <link rel="stylesheet"
-        href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre
-  <link rel="stylesheet"
-        href="https://unpkg.com/@mapbox/mapbox-gl-draw@1.5.0/dist/mapboxy, #map {
+        href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-glink rel="stylesheet"
+        href="https://unpkg.com/@mapbox/mapbox-gl-draw@1.5.0/dist/mapbox-gl-draw{
       margin: 0;
       padding: 0;
       height: 100%;
     }
 
-    /* Selection panel (TOP‑LEFT) */
     .selection-panel {
       position: absolute;
       top: 10px;
@@ -28,11 +26,6 @@
       z-index: 10;
     }
 
-    .selection-panel h3 {
-      margin: 0 0 6px 0;
-      font-size: 14px;
-    }
-
     .selection-list {
       max-height: 160px;
       overflow-y: auto;
@@ -42,26 +35,14 @@
     .selection-item {
       display: flex;
       justify-content: space-between;
-      align-items: center;
       margin-bottom: 4px;
     }
 
-    .selection-item button {
-      background: none;
-      border: none;
-      color: #c00;
-      cursor: pointer;
-      font-size: 12px;
-    }
-
-    .action-btn {
-      width: 100%;
-      margin-top: 4px;
+    button {
       font-size: 12px;
       cursor: pointer;
     }
 
-    /* Legend */
     .legend {
       position: absolute;
       bottom: 20px;
@@ -71,7 +52,6 @@
       font-size: 13px;
       box-shadow: 0 0 15px rgba(0,0,0,0.2);
       border-radius: 5px;
-      z-index: 5;
     }
   </style>
 </head>
@@ -80,55 +60,51 @@
 
 <div id="map"></div>
 
-<!-- Selection panel -->
 <div class="selection-panel">
-  <h3 id="panelTitle"></h3>
+  <strong id="panelTitle"></strong>
   <div id="selectionList" class="selection-list"></div>
-
-  <button id="clearBtn" class="action-btn"></button>
-  <button id="exportCsvBtn" class="action-btn"></button>
-  <button id="exportJsonBtn" class="action-btn"></button>
+  <button id="clearBtn"></button>
+  <button id="csvBtn"></button>
+  <button id="jsonBtn"></button>
 </div>
 
-<!-- Legend -->
 <div class="legend">
   <strong id="legendTitle"></strong><br>
-  <span style="color:#99CC99;">■</span> 1818–1939<br>
-  <span style="color:#66AA66;">■</span> 1940–1969<br>
-  <span style="color:#228B22;">■</span> 1970–1989<br>
-  <span style="color:#006400;">■</span> 1990–Present
+  ■ 1818–1939<br>
+  ■ 1940–1969<br>
+  ■ 1970–1989<br>
+  ■ 1990–Present
 </div>
 
 <!-- ✅ MapLibre JS -->
-<script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre✅ Mapbox Draw JS -->
-<script src="https://unpkg.com/@mapbox/mapbox-gl-draw@1.5.-gl-draw.js</script>
+<script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.jsox Draw JS -->
+<script src="https://unpkg.com/@mapbox/mapbox-gl-draw@1.5.0/dist/mapbox-gl-draw.js-- ✅ Turf JS (required for spatial selection) -->
+<script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
 
 <script>
 /* ---------- Language ---------- */
 
-const isFrench =
-  navigator.language &&
-  navigator.language.toLowerCase().startsWith("fr");
+const isFrench = navigator.language?.toLowerCase().startsWith("fr");
 
 const UI = isFrench ? {
-  panelTitle: "Documents sélectionnés",
+  panel: "Documents sélectionnés",
   clear: "Tout effacer",
-  exportCsv: "Exporter CSV",
-  exportJson: "Exporter JSON",
+  csv: "Exporter CSV",
+  json: "Exporter JSON",
   legend: "Date"
 } : {
-  panelTitle: "Selected Documents",
+  panel: "Selected Documents",
   clear: "Clear all",
-  exportCsv: "Export CSV",
-  exportJson: "Export JSON",
+  csv: "Export CSV",
+  json: "Export JSON",
   legend: "Date"
 };
 
-document.getElementById("panelTitle").textContent = UI.panelTitle;
-document.getElementById("clearBtn").textContent = UI.clear;
-document.getElementById("exportCsvBtn").textContent = UI.exportCsv;
-document.getElementById("exportJsonBtn").textContent = UI.exportJson;
-document.getElementById("legendTitle").textContent = UI.legend;
+panelTitle.textContent = UI.panel;
+clearBtn.textContent = UI.clear;
+csvBtn.textContent = UI.csv;
+jsonBtn.textContent = UI.json;
+legendTitle.textContent = UI.legend;
 
 /* ---------- Map ---------- */
 
@@ -147,7 +123,7 @@ const map = new maplibregl.Map({
 
 map.addControl(new maplibregl.NavigationControl());
 
-/* ---------- Draw (Spatial Selection) ---------- */
+/* ---------- Draw ---------- */
 
 const draw = new MapboxDraw({
   displayControlsDefault: false,
@@ -155,27 +131,20 @@ const draw = new MapboxDraw({
 });
 map.addControl(draw, "top-left");
 
-/* ---------- Selection State ---------- */
+/* ---------- Selection ---------- */
 
 const selectedDocs = new Set();
 const listEl = document.getElementById("selectionList");
-
-/* ---------- Helpers ---------- */
 
 function updateList() {
   listEl.innerHTML = "";
   selectedDocs.forEach(id => {
     const row = document.createElement("div");
     row.className = "selection-item";
-
-    const label = document.createElement("span");
-    label.textContent = id;
-
+    row.innerHTML = `<span>${id}</span>`;
     const btn = document.createElement("button");
     btn.textContent = "✕";
-    btn.addEventListener("click", () => deselect(id));
-
-    row.appendChild(label);
+    btn.onclick = () => deselect(id);
     row.appendChild(btn);
     listEl.appendChild(row);
   });
@@ -189,47 +158,45 @@ function select(id) {
 }
 
 function deselect(id) {
-  if (!selectedDocs.has(id)) return;
   selectedDocs.delete(id);
   map.setFeatureState({ source: "bathy", id }, { selected: false });
   updateList();
 }
 
-document.getElementById("clearBtn").addEventListener("click", () => {
+/* ---------- Export ---------- */
+
+csvBtn.onclick = () => {
+  const blob = new Blob([Array.from(selectedDocs).join("\n")], { type: "text/csv" });
+  download(blob, "selected_documents.csv");
+};
+
+jsonBtn.onclick = () => {
+  const blob = new Blob(
+    [JSON.stringify(Array.from(selectedDocs), null, 2)],
+    { type: "application/json" }
+  );
+  download(blob, "selected_documents.json");
+};
+
+function download(blob, name) {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+clearBtn.onclick = () => {
   selectedDocs.forEach(id =>
     map.setFeatureState({ source: "bathy", id }, { selected: false })
   );
   selectedDocs.clear();
   updateList();
-});
-
-/* ---------- Export ---------- */
-
-document.getElementById("exportCsvBtn").addEventListener("click", () => {
-  const csv = Array.from(selectedDocs).join("\n");
-  download(csv, "selected_documents.csv", "text/csv");
-});
-
-document.getElementById("exportJsonBtn").addEventListener("click", () => {
-  download(
-    JSON.stringify(Array.from(selectedDocs), null, 2),
-    "selected_documents.json",
-    "application/json"
-  );
-});
-
-function download(content, filename, type) {
-  const blob = new Blob([content], { type });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(a.href);
-}
+};
 
 /* ---------- Data ---------- */
 
-let allFeatures = [];
+let cachedFeatures = [];
 
 map.on("load", () => {
   map.addSource("bathy", {
@@ -242,10 +209,7 @@ map.on("load", () => {
     id: "bathy-fill",
     type: "fill",
     source: "bathy",
-    paint: {
-      "fill-color": "#228B22",
-      "fill-opacity": 0.45
-    }
+    paint: { "fill-color": "#228B22", "fill-opacity": 0.45 }
   });
 
   map.addLayer({
@@ -262,33 +226,11 @@ map.on("load", () => {
     }
   });
 
-  // Cache features for spatial selection
   map.once("idle", () => {
-    allFeatures = map.querySourceFeatures("bathy");
+    cachedFeatures = map.querySourceFeatures("bathy");
   });
 
-  /* Hover tooltip */
-  const tooltip = new maplibregl.Popup({
-    closeButton: false,
-    closeOnClick: false
-  });
-
-  map.on("mousemove", "bathy-fill", e => {
-    const f = e.features[0];
-    tooltip
-      .setLngLat(e.lngLat)
-      .setHTML(
-        `<strong>${f.properties.documentId}</strong><br>${f.properties.statusDate}`
-      )
-      .addTo(map);
-  });
-
-  map.on("mouseleave", "bathy-fill", () => tooltip.remove());
-
-  /* Click select */
-  map.on("click", "bathy-fill", e => {
-    select(e.features[0].id);
-  });
+  map.on("click", "bathy-fill", e => select(e.features[0].id));
 });
 
 /* ---------- Spatial selection ---------- */
@@ -297,16 +239,13 @@ map.on("draw.create", () => {
   const drawn = draw.getAll().features[0];
   if (!drawn) return;
 
-  allFeatures.forEach(f => {
+  cachedFeatures.forEach(f => {
     if (turf.booleanIntersects(drawn, f)) {
       select(f.id);
     }
   });
 });
 </script>
-
-<!-- ✅ Turf (required for spatial selection) -->
-<script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
 
 </body>
 </html>
