@@ -6,8 +6,8 @@
 
   <!-- MapLibre CSS -->
   <link
-    rel="stylesheet"
     href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css"
+    rel="stylesheet"
   />
 
   <style>
@@ -81,12 +81,11 @@
 <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
 
 <script>
-  // ✅ Detect browser language (EN default)
+  // ✅ Browser language detection (EN default)
   const isFrench =
     navigator.language &&
     navigator.language.toLowerCase().startsWith("fr");
 
-  // ✅ Esri vector styles
   const STYLE_EN =
     "https://www.arcgis.com/sharing/rest/content/items/800d755712e8415aab301b9d55bc2800/resources/styles/root.json";
 
@@ -95,22 +94,28 @@
 
   const basemapStyle = isFrench ? STYLE_FR : STYLE_EN;
 
-  // ✅ Create map
+  // ✅ Create map (Canada default view)
   const map = new maplibregl.Map({
     container: "map",
-    style: basemapStyle
+    style: basemapStyle,
+    center: [-96, 62],
+    zoom: 3
   });
 
   map.addControl(new maplibregl.NavigationControl());
 
+  let hoveredId = null;
+  let selectedId = null;
+
   map.on("load", () => {
-    // ✅ Add GeoJSON source
+    // ✅ Add GeoJSON
     map.addSource("bathy", {
       type: "geojson",
-      data: "https://raw.githubusercontent.com/cavanaghg-chs/bathy_map/main/data/product-results.geojson"
+      data: "https://raw.githubusercontent.com/cavanaghg-chs/bathy_map/main/data/product-results.geojson",
+      promoteId: "documentId"
     });
 
-    // ✅ Fill layer (transparent)
+    // ✅ Fill layer
     map.addLayer({
       id: "bathy-fill",
       type: "fill",
@@ -127,40 +132,92 @@
       }
     });
 
-    // ✅ Outline layer
+    // ✅ Outline with hover / selection styling
     map.addLayer({
       id: "bathy-outline",
       type: "line",
       source: "bathy",
       paint: {
-        "line-color": "#004d00",
-        "line-width": 1.2
+        "line-color": [
+          "case",
+          ["boolean", ["feature-state", "selected"], false], "#FFD700",
+          ["boolean", ["feature-state", "hover"], false], "#00FFFF",
+          "#004d00"
+        ],
+        "line-width": [
+          "case",
+          ["boolean", ["feature-state", "selected"], false], 3,
+          ["boolean", ["feature-state", "hover"], false], 2,
+          1.2
+        ]
       }
     });
 
-    // ✅ Compute bounds using rendered features (robust)
-    const features = map.querySourceFeatures("bathy");
-    const bounds = new maplibregl.LngLatBounds();
-
-    features.forEach(f => {
-      const coords = f.geometry.coordinates;
-      (function walk(c) {
-        if (typeof c[0] === "number") {
-          bounds.extend(c);
-        } else {
-          c.forEach(walk);
+    // ✅ Hover interaction
+    map.on("mousemove", "bathy-fill", e => {
+      if (e.features.length > 0) {
+        if (hoveredId !== null) {
+          map.setFeatureState(
+            { source: "bathy", id: hoveredId },
+            { hover: false }
+          );
         }
-      })(coords);
+        hoveredId = e.features[0].id;
+        map.setFeatureState(
+          { source: "bathy", id: hoveredId },
+          { hover: true }
+        );
+      }
     });
 
-    if (!bounds.isEmpty()) {
-      map.fitBounds(bounds, {
-        padding: 40,
-        duration: 0
-      });
-    }
+    map.on("mouseleave", "bathy-fill", () => {
+      if (hoveredId !== null) {
+        map.setFeatureState(
+          { source: "bathy", id: hoveredId },
+          { hover: false }
+        );
+      }
+      hoveredId = null;
+    });
+
+    // ✅ Click interaction + popup
+    map.on("click", "bathy-fill", e => {
+      const feature = e.features[0];
+
+      if (selectedId !== null) {
+        map.setFeatureState(
+          { source: "bathy", id: selectedId },
+          { selected: false }
+        );
+      }
+
+      selectedId = feature.id;
+
+      map.setFeatureState(
+        { source: "bathy", id: selectedId },
+        { selected: true }
+      );
+
+      new maplibregl.Popup()
+        .setLngLat(e.lngLat)
+        .setHTML(
+          `<strong>Document ID:</strong> ${feature.properties.documentId}<br>
+           <strong>Date:</strong> ${feature.properties.statusDate}`
+        )
+        .addTo(map);
+    });
+
+    // ✅ Cursor feedback
+    map.on("mouseenter", "bathy-fill", () => {
+      map.getCanvas().style.cursor = "pointer";
+    });
+
+    map.on("mouseleave", "bathy-fill", () => {
+      map.getCanvas().style.cursor = "";
+    });
   });
 </script>
 
 </body>
 </html>
+``
