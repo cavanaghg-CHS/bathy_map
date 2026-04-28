@@ -4,10 +4,10 @@
   <meta charset="utf-8" />
   <title>Bathy Map</title>
 
-  <!-- ✅ MapLibre CSS -->
+  <!-- ✅ MapLibre CSS (CORRECT) -->
   <link
     rel="stylesheet"
-    href="https://unpkg.com/maplibre-gl@3.6. html, body, #map {
+    href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibreap {
       margin: 0;
       padding: 0;
       height: 100%;
@@ -66,7 +66,7 @@
 
 <div id="map"></div>
 
-<!-- ✅ Selection panel -->
+<!-- Selection panel -->
 <div class="selection-panel">
   <h3>Selected Documents</h3>
   <div id="selectionList" class="selection-list"></div>
@@ -75,8 +75,8 @@
   <button id="exportJsonBtn" class="action-btn">Export JSON</button>
 </div>
 
-<!-- ✅ MapLibre JS -->
-<script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibrept>
+<!-- ✅ MapLibre JS (CORRECT) -->
+<script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.jscript>
   /* ---------- Map ---------- */
 
   const isFrench =
@@ -98,7 +98,7 @@
 
   map.addControl(new maplibregl.NavigationControl());
 
-  /* ---------- Selection state ---------- */
+  /* ---------- Selection ---------- */
 
   const selectedDocs = new Set();
   const listEl = document.getElementById("selectionList");
@@ -125,30 +125,21 @@
   function select(id) {
     if (selectedDocs.has(id)) return;
     selectedDocs.add(id);
-    map.setFeatureState(
-      { source: "bathy", id },
-      { selected: true }
-    );
+    map.setFeatureState({ source: "bathy", id }, { selected: true });
     updateList();
   }
 
   function deselect(id) {
     if (!selectedDocs.has(id)) return;
     selectedDocs.delete(id);
-    map.setFeatureState(
-      { source: "bathy", id },
-      { selected: false }
-    );
+    map.setFeatureState({ source: "bathy", id }, { selected: false });
     updateList();
   }
 
   document.getElementById("clearBtn").addEventListener("click", () => {
-    selectedDocs.forEach(id => {
-      map.setFeatureState(
-        { source: "bathy", id },
-        { selected: false }
-      );
-    });
+    selectedDocs.forEach(id =>
+      map.setFeatureState({ source: "bathy", id }, { selected: false })
+    );
     selectedDocs.clear();
     updateList();
   });
@@ -223,9 +214,7 @@
         .addTo(map);
     });
 
-    map.on("mouseleave", "bathy-fill", () => {
-      tooltip.remove();
-    });
+    map.on("mouseleave", "bathy-fill", () => tooltip.remove());
 
     /* ✅ Click = toggle selection */
     map.on("click", "bathy-fill", e => {
