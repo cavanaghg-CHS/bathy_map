@@ -4,127 +4,72 @@
   <meta charset="utf-8" />
   <title>Bathy Map</title>
 
-  <!-- Leaflet CSS -->
+  <!-- MapLibre CSS -->
   <link
+    href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css"
     rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
   />
 
   <style>
-    html, body {
+    html, body, #map {
       margin: 0;
       padding: 0;
       height: 100%;
-    }
-
-    #map {
-      width: 100%;
-      height: 100%;
-    }
-
-    .legend {
-      background: white;
-      padding: 10px;
-      line-height: 1.4em;
-      color: #333;
-      box-shadow: 0 0 15px rgba(0,0,0,0.2);
-      border-radius: 5px;
-      font-size: 14px;
-    }
-
-    .legend i {
-      width: 18px;
-      height: 18px;
-      float: left;
-      margin-right: 8px;
-      opacity: 0.8;
     }
   </style>
 </head>
 
 <body>
-
 <div id="map"></div>
 
-<!-- Leaflet JS -->
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-<!-- Esri Leaflet -->
-<script src="https://unpkg.com/esri-leaflet@3.0.12/dist/esri-leaflet.js"></script>
-
-<!-- Esri Leaflet Vector -->
-<script src="https://unpkg.com/esri-leaflet-vector@4.1.0/dist/esri-leaflet-vector.js"></script>
+<!-- MapLibre JS -->
+<script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
 
 <script>
-  // Create map
-  const map = L.map("map").setView([53.7, -132.8], 6);
+  // ✅ Create map with Esri vector style
+  const map = new maplibregl.Map({
+    container: "map",
+    style: "https://www.arcgis.com/sharing/rest/content/items/800d755712e8415aab301b9d55bc2800/resources/styles/root.json",
+    center: [-132.8, 53.7],
+    zoom: 6
+  });
 
-  // ✅ WORKING Esri vector basemap (supported ID)
-  L.esri.Vector.vectorBasemapLayer("ArcGIS:Topographic", {
-    attribution: "© Esri"
-  }).addTo(map);
+  map.addControl(new maplibregl.NavigationControl());
 
-  // Colour ramp
-  function getColor(year) {
-    return year < 1940 ? "#99CC99" :
-           year < 1970 ? "#66AA66" :
-           year < 1990 ? "#228B22" :
-                         "#006400";
-  }
-
-  function styleFeature(feature) {
-    const year = new Date(feature.properties.statusDate).getFullYear();
-    return {
-      color: "#004d00",
-      weight: 1.5,
-      fillOpacity: 0.7,
-      fillColor: getColor(year)
-    };
-  }
-
-  // Load GeoJSON
-  fetch("https://raw.githubusercontent.com/cavanaghg-chs/bathy_map/main/data/product-results.geojson")
-    .then(response => response.json())
-    .then(data => {
-      const geojsonLayer = L.geoJSON(data, {
-        style: styleFeature,
-        onEachFeature: (feature, layer) => {
-          layer.bindPopup(
-            `<strong>Document ID:</strong> ${feature.properties.documentId}<br>
-             <strong>Date:</strong> ${feature.properties.statusDate}`
-          );
-        }
-      }).addTo(map);
-
-      map.fitBounds(geojsonLayer.getBounds());
-    })
-    .catch(err => console.error("GeoJSON load error:", err));
-
-  // Legend
-  const legend = L.control({ position: "bottomright" });
-
-  legend.onAdd = function () {
-    const div = L.DomUtil.create("div", "legend");
-
-    const grades = [
-      { label: "1818 – 1939", color: "#99CC99" },
-      { label: "1940 – 1969", color: "#66AA66" },
-      { label: "1970 – 1989", color: "#228B22" },
-      { label: "1990 – Present", color: "#006400" }
-    ];
-
-    div.innerHTML = "<strong>Date</strong><br>";
-
-    grades.forEach(g => {
-      div.innerHTML +=
-        `<i style="background:${g.color}"></i>${g.label}<br>`;
+  // ✅ Load your GeoJSON once the style is ready
+  map.on("load", () => {
+    map.addSource("bathy", {
+      type: "geojson",
+      data: "https://raw.githubusercontent.com/cavanaghg-chs/bathy_map/main/data/product-results.geojson"
     });
 
-    return div;
-  };
+    map.addLayer({
+      id: "bathy-fill",
+      type: "fill",
+      source: "bathy",
+      paint: {
+        "fill-color": [
+          "case",
+          ["<", ["to-number", ["slice", ["get", "statusDate"], 0, 4]], 1940], "#99CC99",
+          ["<", ["to-number", ["slice", ["get", "statusDate"], 0, 4]], 1970], "#66AA66",
+          ["<", ["to-number", ["slice", ["get", "statusDate"], 0, 4]], 1990], "#228B22",
+          "#006400"
+        ],
+        "fill-opacity": 0.7
+      }
+    });
 
-  legend.addTo(map);
+    map.addLayer({
+      id: "bathy-outline",
+      type: "line",
+      source: "bathy",
+      paint: {
+        "line-color": "#004d00",
+        "line-width": 1.5
+      }
+    });
+  });
 </script>
-
 </body>
 </html>
+``
