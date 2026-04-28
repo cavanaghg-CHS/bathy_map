@@ -46,7 +46,7 @@
 
 <div id="map"></div>
 
-<!-- Leaflet -->
+<!-- Leaflet JS -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <!-- Esri Leaflet -->
@@ -59,13 +59,10 @@
   // Create map
   const map = L.map("map").setView([53.7, -132.8], 6);
 
-  // ✅ CORRECT: load vector basemap from style JSON
-  L.esri.Vector.vectorTileLayer(
-    "https://www.arcgis.com/sharing/rest/content/items/800d755712e8415aab301b9d55bc2800/resources/styles/root.json",
-    {
-      attribution: "© Esri"
-    }
-  ).addTo(map);
+  // ✅ WORKING Esri vector basemap (supported ID)
+  L.esri.Vector.vectorBasemapLayer("ArcGIS:Topographic", {
+    attribution: "© Esri"
+  }).addTo(map);
 
   // Colour ramp
   function getColor(year) {
@@ -87,9 +84,9 @@
 
   // Load GeoJSON
   fetch("https://raw.githubusercontent.com/cavanaghg-chs/bathy_map/main/data/product-results.geojson")
-    .then(r => r.json())
+    .then(response => response.json())
     .then(data => {
-      const layer = L.geoJSON(data, {
+      const geojsonLayer = L.geoJSON(data, {
         style: styleFeature,
         onEachFeature: (feature, layer) => {
           layer.bindPopup(
@@ -99,7 +96,7 @@
         }
       }).addTo(map);
 
-      map.fitBounds(layer.getBounds());
+      map.fitBounds(geojsonLayer.getBounds());
     })
     .catch(err => console.error("GeoJSON load error:", err));
 
