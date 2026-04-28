@@ -1,63 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>Bathy Map</title>
+  <meta charset="utf-8">
+  <title>Bathy Map – Final Baseline</title>
 
-  <!-- ✅ MapLibre CSS (CORRECT) -->
+  <!-- MapLibre CSS -->
   <link
     rel="stylesheet"
-    href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibreap {
+    href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplib#map {
       margin: 0;
       padding: 0;
       height: 100%;
-    }
-
-    /* Selection panel (TOP‑LEFT) */
-    .selection-panel {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      width: 260px;
-      background: white;
-      padding: 10px;
-      font-size: 13px;
-      box-shadow: 0 0 15px rgba(0,0,0,0.2);
-      border-radius: 5px;
-      z-index: 10;
-    }
-
-    .selection-panel h3 {
-      margin: 0 0 6px 0;
-      font-size: 14px;
-    }
-
-    .selection-list {
-      max-height: 160px;
-      overflow-y: auto;
-      margin-bottom: 8px;
-    }
-
-    .selection-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 4px;
-    }
-
-    .selection-item button {
-      background: none;
-      border: none;
-      color: #c00;
-      cursor: pointer;
-      font-size: 12px;
-    }
-
-    .action-btn {
-      width: 100%;
-      margin-top: 4px;
-      font-size: 12px;
-      cursor: pointer;
     }
   </style>
 </head>
@@ -66,31 +19,11 @@
 
 <div id="map"></div>
 
-<!-- Selection panel -->
-<div class="selection-panel">
-  <h3>Selected Documents</h3>
-  <div id="selectionList" class="selection-list"></div>
-  <button id="clearBtn" class="action-btn">Clear all</button>
-  <button id="exportCsvBtn" class="action-btn">Export CSV</button>
-  <button id="exportJsonBtn" class="action-btn">Export JSON</button>
-</div>
-
-<!-- ✅ MapLibre JS (CORRECT) -->
-<script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.jscript>
-  /* ---------- Map ---------- */
-
-  const isFrench =
-    navigator.language &&
-    navigator.language.toLowerCase().startsWith("fr");
-
-  const STYLE_EN =
-    "https://www.arcgis.com/sharing/rest/content/items/800d755712e8415aab301b9d55bc2800/resources/styles/root.json";
-  const STYLE_FR =
-    "https://www.arcgis.com/sharing/rest/content/items/70e9deb5019d49cc88c6543887db9db5/resources/styles/root.json";
-
+<!-- MapLibre JS -->
+<script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl
   const map = new maplibregl.Map({
     container: "map",
-    style: isFrench ? STYLE_FR : STYLE_EN,
+    style: "https://www.arcgis.com/sharing/rest/content/items/800d755712e8415aab301b9d55bc2800/resources/styles/root.json",
     center: [-96, 62],
     zoom: 3,
     attributionControl: false
@@ -98,80 +31,10 @@
 
   map.addControl(new maplibregl.NavigationControl());
 
-  /* ---------- Selection ---------- */
-
-  const selectedDocs = new Set();
-  const listEl = document.getElementById("selectionList");
-
-  function updateList() {
-    listEl.innerHTML = "";
-    selectedDocs.forEach(id => {
-      const row = document.createElement("div");
-      row.className = "selection-item";
-
-      const label = document.createElement("span");
-      label.textContent = id;
-
-      const btn = document.createElement("button");
-      btn.textContent = "✕";
-      btn.addEventListener("click", () => deselect(id));
-
-      row.appendChild(label);
-      row.appendChild(btn);
-      listEl.appendChild(row);
-    });
-  }
-
-  function select(id) {
-    if (selectedDocs.has(id)) return;
-    selectedDocs.add(id);
-    map.setFeatureState({ source: "bathy", id }, { selected: true });
-    updateList();
-  }
-
-  function deselect(id) {
-    if (!selectedDocs.has(id)) return;
-    selectedDocs.delete(id);
-    map.setFeatureState({ source: "bathy", id }, { selected: false });
-    updateList();
-  }
-
-  document.getElementById("clearBtn").addEventListener("click", () => {
-    selectedDocs.forEach(id =>
-      map.setFeatureState({ source: "bathy", id }, { selected: false })
-    );
-    selectedDocs.clear();
-    updateList();
-  });
-
-  /* ---------- Export ---------- */
-
-  document.getElementById("exportCsvBtn").addEventListener("click", () => {
-    const csv = Array.from(selectedDocs).join("\n");
-    download(csv, "selected_documents.csv", "text/csv");
-  });
-
-  document.getElementById("exportJsonBtn").addEventListener("click", () => {
-    const json = JSON.stringify(Array.from(selectedDocs), null, 2);
-    download(json, "selected_documents.json", "application/json");
-  });
-
-  function download(content, filename, type) {
-    const blob = new Blob([content], { type });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(a.href);
-  }
-
-  /* ---------- Data + Hover ---------- */
-
   map.on("load", () => {
     map.addSource("bathy", {
       type: "geojson",
-      data: "https://raw.githubusercontent.com/cavanaghg-chs/bathy_map/main/data/product-results.geojson",
-      promoteId: "documentId"
+      data: "https://raw.githubusercontent.com/cavanaghg-chs/bathy_map/main/data/product-results.geojson"
     });
 
     map.addLayer({
@@ -180,49 +43,7 @@
       source: "bathy",
       paint: {
         "fill-color": "#228B22",
-        "fill-opacity": 0.45
-      }
-    });
-
-    map.addLayer({
-      id: "bathy-outline",
-      type: "line",
-      source: "bathy",
-      paint: {
-        "line-color": [
-          "case",
-          ["boolean", ["feature-state", "selected"], false], "#FFD700",
-          "#004d00"
-        ],
-        "line-width": 2
-      }
-    });
-
-    /* ✅ Hover tooltip */
-    const tooltip = new maplibregl.Popup({
-      closeButton: false,
-      closeOnClick: false
-    });
-
-    map.on("mousemove", "bathy-fill", e => {
-      const f = e.features[0];
-      tooltip
-        .setLngLat(e.lngLat)
-        .setHTML(
-          `<strong>${f.properties.documentId}</strong><br>${f.properties.statusDate}`
-        )
-        .addTo(map);
-    });
-
-    map.on("mouseleave", "bathy-fill", () => tooltip.remove());
-
-    /* ✅ Click = toggle selection */
-    map.on("click", "bathy-fill", e => {
-      const id = e.features[0].id;
-      if (selectedDocs.has(id)) {
-        deselect(id);
-      } else {
-        select(id);
+        "fill-opacity": 0.5
       }
     });
   });
@@ -230,3 +51,4 @@
 
 </body>
 </html>
+``
