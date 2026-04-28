@@ -27,12 +27,25 @@
 <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
 
 <script>
-  // ✅ Create the map
+  // ✅ Detect browser language (English default)
+  const isFrench =
+    navigator.language &&
+    navigator.language.toLowerCase().startsWith("fr");
+
+  // ✅ Esri vector basemap styles
+  const STYLE_EN =
+    "https://www.arcgis.com/sharing/rest/content/items/800d755712e8415aab301b9d55bc2800/resources/styles/root.json";
+
+  const STYLE_FR =
+    "https://www.arcgis.com/sharing/rest/content/items/70e9deb5019d49cc88c6543887db9db5/resources/styles/root.json";
+
+  // ✅ Create map
   const map = new maplibregl.Map({
     container: "map",
-    style: "https://demotiles.maplibre.org/style.json",
+    style: isFrench ? STYLE_FR : STYLE_EN,
     center: [-96, 62],
-    zoom: 3
+    zoom: 3,
+    attributionControl: false
   });
 
   map.addControl(new maplibregl.NavigationControl());
