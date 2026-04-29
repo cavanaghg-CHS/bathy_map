@@ -5,9 +5,10 @@
   <title>Bathy Map – Final Baseline</title>
 
   <!-- MapLibre CSS -->
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplib#map {
+  https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css
+
+  <style>
+    html, body, #map {
       margin: 0;
       padding: 0;
       height: 100%;
@@ -20,7 +21,9 @@
 <div id="map"></div>
 
 <!-- MapLibre JS -->
-<script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl
+https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js
+
+<script>
   const map = new maplibregl.Map({
     container: "map",
     style: "https://www.arcgis.com/sharing/rest/content/items/800d755712e8415aab301b9d55bc2800/resources/styles/root.json",
@@ -51,4 +54,3 @@
 
 </body>
 </html>
-``
