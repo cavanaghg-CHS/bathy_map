@@ -4,22 +4,21 @@
   <meta charset="utf-8" />
   <title>Bathy Map</title>
 
-  <!-- MapLibre -->
-  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css"com/maplibre-gl@3.6.2/dist/maplibret>
+  <!-- MapLibre CSS -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css"
+  rel="stylesheet"
+    href="https://unpkg.com/@mapbox/mapbox-gl-draw@1.5.0/dist/mapbox-gl-draw.css"
+  margin: 0;
+      padding: 0;
+      height: 100%;
+    }
 
-  <!-- Mapbox Draw (works with MapLibre) -->
-  <link rel="stylesheet" href="https://unpkg.com/@mapbox/mapbox-gl-draw@1.5.0/dist/mapbox-gl-draw.css" />
-  <script src="https://unpkg.com/@mapbox/mapbox-gl-draw@1.5.0/dist/mapbox-gl-draw.js"></script>
-
-  <!-- Turf -->
-  <script src="https://unpkg.com/@turf/turf@6.5.0/turf.min.js"></script>
-
-  <style>
-    html, body, #map { margin: 0; padding: 0; height: 100%; }
-
+    /* Panel below draw tools */
     .selection-panel {
       position: absolute;
-      top: 100px;
+      top: 95px;
       left: 10px;
       width: 260px;
       background: white;
@@ -64,19 +63,20 @@
   <button id="exportJsonBtn" class="action-btn">Export JSON</button>
 </div>
 
+<!-- MapLibre JS -->
+<script src="https://unpkg.com/maplibre-gl@3.6bre-gl.js
+
+<!-- Mapbox Draw JS -->
+<script src="https://unpkg.com/@mapbox/mapbox-gl-draw@1.5.0/dist/mapbox-gl-draw
+<!-- Turf JS -->
+<script src="https://unpkg.com/@turf/turf@6.5.0/turf.min.js"></script>
+
 <script>
-/* ---------- Map ---------- */
-
-const isFrench = navigator.language?.toLowerCase().startsWith("fr");
-
-const STYLE_EN =
-  "https://www.arcgis.com/sharing/rest/content/items/800d755712e8415aab301b9d55bc2800/resources/styles/root.json";
-const STYLE_FR =
-  "https://www.arcgis.com/sharing/rest/content/items/70e9deb5019d49cc88c6543887db9db5/resources/styles/root.json";
+/* ---------------- Map ---------------- */
 
 const map = new maplibregl.Map({
   container: "map",
-  style: isFrench ? STYLE_FR : STYLE_EN,
+  style: "https://www.arcgis.com/sharing/rest/content/items/800d755712e8415aab301b9d55bc2800/resources/styles/root.json",
   center: [-96, 62],
   zoom: 3,
   attributionControl: false
@@ -84,7 +84,7 @@ const map = new maplibregl.Map({
 
 map.addControl(new maplibregl.NavigationControl());
 
-/* ---------- Draw tools ---------- */
+/* ---------------- Draw tools ---------------- */
 
 const draw = new MapboxDraw({
   displayControlsDefault: false,
@@ -96,7 +96,7 @@ const draw = new MapboxDraw({
 });
 map.addControl(draw, "top-left");
 
-/* ---------- Selection state ---------- */
+/* ---------------- Selection state ---------------- */
 
 const selectedDocs = new Set();
 const listEl = document.getElementById("selectionList");
@@ -125,7 +125,7 @@ function deselect(id) {
   updateList();
 }
 
-/* ---------- Buttons ---------- */
+/* ---------------- Buttons ---------------- */
 
 document.getElementById("clearBtn").onclick = () => {
   selectedDocs.forEach(id =>
@@ -136,17 +136,15 @@ document.getElementById("clearBtn").onclick = () => {
 };
 
 document.getElementById("exportCsvBtn").onclick = () => {
-  download([...selectedDocs].join("\n"), "selected_documents.csv", "text/csv");
+  download([...selectedDocs].join("\n"), "selected_documents.csv");
 };
 
 document.getElementById("exportJsonBtn").onclick = () => {
-  download(JSON.stringify([...selectedDocs], null, 2),
-           "selected_documents.json",
-           "application/json");
+  download(JSON.stringify([...selectedDocs], null, 2), "selected_documents.json");
 };
 
-function download(content, name, type) {
-  const blob = new Blob([content], { type });
+function download(content, name) {
+  const blob = new Blob([content]);
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
   a.download = name;
@@ -154,7 +152,7 @@ function download(content, name, type) {
   URL.revokeObjectURL(a.href);
 }
 
-/* ---------- Data ---------- */
+/* ---------------- Data ---------------- */
 
 map.on("load", () => {
   map.addSource("bathy", {
@@ -177,7 +175,8 @@ map.on("load", () => {
     paint: {
       "line-color": [
         "case",
-        ["boolean", ["feature-state", "selected"], false], "#FFD700",
+        ["boolean", ["feature-state", "selected"], false],
+        "#FFD700",
         "#004d00"
       ],
       "line-width": 2
@@ -190,22 +189,23 @@ map.on("load", () => {
   });
 });
 
-/* ---------- Spatial Selection ---------- */
+/* ---------------- Spatial selection (polygon OR line) ---------------- */
 
 map.on("draw.create", e => {
   const geom = e.features[0];
 
-  let selector =
+  // Lines need buffering to work meaningfully
+  const selector =
     geom.geometry.type === "LineString"
       ? turf.buffer(geom, 5, { units: "kilometers" })
       : geom;
 
-  const matches = map.queryRenderedFeatures(
+  const hits = map.queryRenderedFeatures(
     turf.bbox(selector),
     { layers: ["bathy-fill"] }
   );
 
-  matches.forEach(f => {
+  hits.forEach(f => {
     if (turf.booleanIntersects(selector, f)) {
       select(f.id);
     }
@@ -215,4 +215,3 @@ map.on("draw.create", e => {
 
 </body>
 </html>
-``
