@@ -8,7 +8,7 @@
   <link
     rel="stylesheet"
     href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css"
-  />
+  >
 
   <style>
     html, body, #map {
@@ -37,7 +37,25 @@
     }
 
     .selection-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       margin-bottom: 4px;
+    }
+
+    .selection-item button {
+      background: none;
+      border: none;
+      color: #c00;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .clear-btn {
+      width: 100%;
+      margin-top: 6px;
+      font-size: 12px;
+      cursor: pointer;
     }
   </style>
 </head>
@@ -50,6 +68,7 @@
 <div class="selection-panel">
   <h3>Selected Documents</h3>
   <div id="selectionList"></div>
+  <button id="clearBtn" class="clear-btn">Clear all</button>
 </div>
 
 <!-- ✅ MapLibre JS -->
@@ -85,13 +104,56 @@
 
   function updateList() {
     listEl.innerHTML = "";
+
     selectedDocs.forEach(id => {
-      const div = document.createElement("div");
-      div.className = "selection-item";
-      div.textContent = id;
-      listEl.appendChild(div);
+      const row = document.createElement("div");
+      row.className = "selection-item";
+
+      const label = document.createElement("span");
+      label.textContent = id;
+
+      const btn = document.createElement("button");
+      btn.textContent = "✕";
+      btn.addEventListener("click", () => {
+        deselect(id);
+      });
+
+      row.appendChild(label);
+      row.appendChild(btn);
+      listEl.appendChild(row);
     });
   }
+
+  function select(id) {
+    if (selectedDocs.has(id)) return;
+    selectedDocs.add(id);
+    map.setFeatureState(
+      { source: "bathy", id },
+      { selected: true }
+    );
+    updateList();
+  }
+
+  function deselect(id) {
+    if (!selectedDocs.has(id)) return;
+    selectedDocs.delete(id);
+    map.setFeatureState(
+      { source: "bathy", id },
+      { selected: false }
+    );
+    updateList();
+  }
+
+  document.getElementById("clearBtn").addEventListener("click", () => {
+    selectedDocs.forEach(id => {
+      map.setFeatureState(
+        { source: "bathy", id },
+        { selected: false }
+      );
+    });
+    selectedDocs.clear();
+    updateList();
+  });
 
   /* ---------- Data ---------- */
 
@@ -117,22 +179,23 @@
       type: "line",
       source: "bathy",
       paint: {
-        "line-color": "#004d00",
-        "line-width": 1.5
+        "line-color": [
+          "case",
+          ["boolean", ["feature-state", "selected"], false], "#FFD700",
+          "#004d00"
+        ],
+        "line-width": 2
       }
     });
 
     /* Toggle selection on click */
     map.on("click", "bathy-fill", e => {
       const id = e.features[0].id;
-
       if (selectedDocs.has(id)) {
-        selectedDocs.delete(id);
+        deselect(id);
       } else {
-        selectedDocs.add(id);
+        select(id);
       }
-
-      updateList();
     });
   });
 </script>
