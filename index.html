@@ -5,23 +5,21 @@
   <title>Bathy Map</title>
 
   <!-- MapLibre CSS -->
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css"
-  rel="stylesheet"
-    href="https://unpkg.com/@mapbox/mapbox-gl-draw@1.5.0/dist/mapbox-gl-draw.css"
-  margin: 0;
+  <link rel="stylesheet"
+        href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css"el="stylesheet"
+        href="https://unpkg.com/@mapbox/mapbox-gl-draw@1.5
+    html, body, #map {
+      margin: 0;
       padding: 0;
       height: 100%;
     }
 
-    /* Panel below draw tools */
     .selection-panel {
       position: absolute;
-      top: 95px;
+      top: 100px; /* below draw tools */
       left: 10px;
       width: 260px;
-      background: white;
+      background: #fff;
       padding: 10px;
       font-size: 13px;
       border-radius: 4px;
@@ -64,10 +62,11 @@
 </div>
 
 <!-- MapLibre JS -->
-<script src="https://unpkg.com/maplibre-gl@3.6bre-gl.js
+<script src="https://unpkg.com/maplibre-gl@3.6.re-gl.js</script>
 
 <!-- Mapbox Draw JS -->
-<script src="https://unpkg.com/@mapbox/mapbox-gl-draw@1.5.0/dist/mapbox-gl-draw
+<script src="https://unpkg.com/@mapbox/mapbox-gl-draw@1.5.0/dist/mapbox-gl-draw.js"></script>
+
 <!-- Turf JS -->
 <script src="https://unpkg.com/@turf/turf@6.5.0/turf.min.js"></script>
 
@@ -140,7 +139,8 @@ document.getElementById("exportCsvBtn").onclick = () => {
 };
 
 document.getElementById("exportJsonBtn").onclick = () => {
-  download(JSON.stringify([...selectedDocs], null, 2), "selected_documents.json");
+  download(JSON.stringify([...selectedDocs], null, 2),
+           "selected_documents.json");
 };
 
 function download(content, name) {
@@ -165,7 +165,10 @@ map.on("load", () => {
     id: "bathy-fill",
     type: "fill",
     source: "bathy",
-    paint: { "fill-color": "#228B22", "fill-opacity": 0.45 }
+    paint: {
+      "fill-color": "#228B22",
+      "fill-opacity": 0.45
+    }
   });
 
   map.addLayer({
@@ -189,12 +192,12 @@ map.on("load", () => {
   });
 });
 
-/* ---------------- Spatial selection (polygon OR line) ---------------- */
+/* ---------------- Spatial selection ---------------- */
 
 map.on("draw.create", e => {
   const geom = e.features[0];
 
-  // Lines need buffering to work meaningfully
+  // Buffer lines so they select meaningfully
   const selector =
     geom.geometry.type === "LineString"
       ? turf.buffer(geom, 5, { units: "kilometers" })
