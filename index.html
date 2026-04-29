@@ -2,10 +2,13 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Bathy Map – Final Baseline</title>
+  <title>Bathy Map – FIXED</title>
 
-  <!-- MapLibre CSS -->
-  https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css
+  <!-- ✅ CORRECT MapLibre CSS -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css"
+  >
 
   <style>
     html, body, #map {
@@ -20,36 +23,18 @@
 
 <div id="map"></div>
 
-<!-- MapLibre JS -->
-https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js
+<!-- ✅ CORRECT MapLibre JS -->
+<script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
 
 <script>
   const map = new maplibregl.Map({
     container: "map",
-    style: "https://www.arcgis.com/sharing/rest/content/items/800d755712e8415aab301b9d55bc2800/resources/styles/root.json",
+    style: "https://demotiles.maplibre.org/style.json",
     center: [-96, 62],
-    zoom: 3,
-    attributionControl: false
+    zoom: 3
   });
 
   map.addControl(new maplibregl.NavigationControl());
-
-  map.on("load", () => {
-    map.addSource("bathy", {
-      type: "geojson",
-      data: "https://raw.githubusercontent.com/cavanaghg-chs/bathy_map/main/data/product-results.geojson"
-    });
-
-    map.addLayer({
-      id: "bathy-fill",
-      type: "fill",
-      source: "bathy",
-      paint: {
-        "fill-color": "#228B22",
-        "fill-opacity": 0.5
-      }
-    });
-  });
 </script>
 
 </body>
