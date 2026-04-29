@@ -1,30 +1,38 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
+  <meta charset="utf-8" />
   <title>Bathy Map</title>
 
   <!-- MapLibre CSS -->
-  <link rel="stylesheet"
-        href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplib
-  <link rel="stylesheet"
-        href="https://unpkg.com/@mapbox/mapbox-gl-draw@1.5.0/dist/mapboxy, #map {
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css"
+  />
+
+  <!-- Mapbox Draw CSS -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/@mapbox/mapbox-gl-draw@1.5.0/dist/mapbox-gl-draw.css"
+  />
+
+  <style>
+    html, body, #map {
       margin: 0;
       padding: 0;
       height: 100%;
     }
 
-    /* Selection panel below draw tools */
     .selection-panel {
       position: absolute;
-      top: 90px;
+      top: 90px;   /* below draw tools */
       left: 10px;
       width: 260px;
-      background: white;
+      background: #fff;
       padding: 10px;
       font-size: 13px;
       box-shadow: 0 0 15px rgba(0,0,0,0.2);
-      border-radius: 5px;
+      border-radius: 4px;
       z-index: 10;
     }
 
@@ -63,17 +71,24 @@
 </div>
 
 <!-- MapLibre JS -->
-<script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplib- Mapbox Draw JS -->
-<script src="https://unpkg.com/@mapbox/mapbox-gl-draw@1.5.0/dist/mapboxscript>
+<script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+
+<!-- Mapbox Draw JS -->
+<script src="https://unpkg.com/@mapbox/mapbox-gl-draw@1.5.0/dist/mapbox-gl-draw.js"></script>
 
 <!-- Turf JS -->
 <script src="https://unpkg.com/@turf/turf@6.5.0/turf.min.js"></script>
 
 <script>
-const isFrench = navigator.language?.toLowerCase().startsWith("fr");
+/* ---------------- Map setup ---------------- */
+
+const isFrench =
+  navigator.language &&
+  navigator.language.toLowerCase().startsWith("fr");
 
 const STYLE_EN =
   "https://www.arcgis.com/sharing/rest/content/items/800d755712e8415aab301b9d55bc2800/resources/styles/root.json";
+
 const STYLE_FR =
   "https://www.arcgis.com/sharing/rest/content/items/70e9deb5019d49cc88c6543887db9db5/resources/styles/root.json";
 
@@ -87,14 +102,19 @@ const map = new maplibregl.Map({
 
 map.addControl(new maplibregl.NavigationControl());
 
-/* Draw tools */
+/* ---------------- Draw controls ---------------- */
+
 const draw = new MapboxDraw({
   displayControlsDefault: false,
-  controls: { polygon: true, trash: true }
+  controls: {
+    polygon: true,
+    trash: true
+  }
 });
 map.addControl(draw, "top-left");
 
-/* Selection state */
+/* ---------------- Selection state ---------------- */
+
 const selectedDocs = new Set();
 const listEl = document.getElementById("selectionList");
 
@@ -103,8 +123,16 @@ function updateList() {
   selectedDocs.forEach(id => {
     const row = document.createElement("div");
     row.className = "selection-item";
-    row.innerHTML = `<span>${id}</span><button>✕</button>`;
-    row.querySelector("button").onclick = () => deselect(id);
+
+    const label = document.createElement("span");
+    label.textContent = id;
+
+    const btn = document.createElement("button");
+    btn.textContent = "✕";
+    btn.onclick = () => deselect(id);
+
+    row.appendChild(label);
+    row.appendChild(btn);
     listEl.appendChild(row);
   });
 }
@@ -131,13 +159,19 @@ document.getElementById("clearBtn").onclick = () => {
 };
 
 document.getElementById("exportCsvBtn").onclick = () => {
-  download(Array.from(selectedDocs).join("\n"), "selected_documents.csv", "text/csv");
+  download(
+    Array.from(selectedDocs).join("\n"),
+    "selected_documents.csv",
+    "text/csv"
+  );
 };
 
 document.getElementById("exportJsonBtn").onclick = () => {
-  download(JSON.stringify(Array.from(selectedDocs), null, 2),
-           "selected_documents.json",
-           "application/json");
+  download(
+    JSON.stringify(Array.from(selectedDocs), null, 2),
+    "selected_documents.json",
+    "application/json"
+  );
 };
 
 function download(content, name, type) {
@@ -149,7 +183,8 @@ function download(content, name, type) {
   URL.revokeObjectURL(a.href);
 }
 
-/* Data + hover + click */
+/* ---------------- Data + hover ---------------- */
+
 map.on("load", () => {
   map.addSource("bathy", {
     type: "geojson",
@@ -161,7 +196,10 @@ map.on("load", () => {
     id: "bathy-fill",
     type: "fill",
     source: "bathy",
-    paint: { "fill-color": "#228B22", "fill-opacity": 0.45 }
+    paint: {
+      "fill-color": "#228B22",
+      "fill-opacity": 0.45
+    }
   });
 
   map.addLayer({
@@ -171,20 +209,26 @@ map.on("load", () => {
     paint: {
       "line-color": [
         "case",
-        ["boolean", ["feature-state", "selected"], false], "#FFD700",
+        ["boolean", ["feature-state", "selected"], false],
+        "#FFD700",
         "#004d00"
       ],
       "line-width": 2
     }
   });
 
-  const tooltip = new maplibregl.Popup({ closeButton: false, closeOnClick: false });
+  const tooltip = new maplibregl.Popup({
+    closeButton: false,
+    closeOnClick: false
+  });
 
   map.on("mousemove", "bathy-fill", e => {
     const f = e.features[0];
     tooltip
       .setLngLat(e.lngLat)
-      .setHTML(`<strong>${f.properties.documentId}</strong><br>${f.properties.statusDate}`)
+      .setHTML(
+        `<strong>${f.properties.documentId}</strong><br>${f.properties.statusDate}`
+      )
       .addTo(map);
   });
 
@@ -196,18 +240,19 @@ map.on("load", () => {
   });
 });
 
-/* ✅ Spatial selection (correct geometry source) */
-map.on("draw.create", e => {
-  const drawn = e.features[0];
-  if (!drawn) return;
+/* ---------------- Spatial selection (FIXED) ---------------- */
 
-  const rendered = map.queryRenderedFeatures(
-    turf.bbox(drawn),
+map.on("draw.create", e => {
+  const polygon = e.features[0];
+  if (!polygon) return;
+
+  const hits = map.queryRenderedFeatures(
+    turf.bbox(polygon),
     { layers: ["bathy-fill"] }
   );
 
-  rendered.forEach(f => {
-    if (turf.booleanIntersects(drawn, f)) {
+  hits.forEach(f => {
+    if (turf.booleanIntersects(polygon, f)) {
       select(f.id);
     }
   });
