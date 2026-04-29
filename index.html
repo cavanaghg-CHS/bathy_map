@@ -2,13 +2,13 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Bathy Map – FIXED</title>
+  <title>Bathy Map</title>
 
-  <!-- ✅ CORRECT MapLibre CSS -->
+  <!-- ✅ MapLibre CSS -->
   <link
     rel="stylesheet"
     href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css"
-  >
+  />
 
   <style>
     html, body, #map {
@@ -23,18 +23,50 @@
 
 <div id="map"></div>
 
-<!-- ✅ CORRECT MapLibre JS -->
+<!-- ✅ MapLibre JS -->
 <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
 
 <script>
+  // ✅ Detect browser language (English default)
+  const isFrench =
+    navigator.language &&
+    navigator.language.toLowerCase().startsWith("fr");
+
+  // ✅ Esri vector basemaps
+  const STYLE_EN =
+    "https://www.arcgis.com/sharing/rest/content/items/800d755712e8415aab301b9d55bc2800/resources/styles/root.json";
+
+  const STYLE_FR =
+    "https://www.arcgis.com/sharing/rest/content/items/70e9deb5019d49cc88c6543887db9db5/resources/styles/root.json";
+
+  // ✅ Create map
   const map = new maplibregl.Map({
     container: "map",
-    style: "https://demotiles.maplibre.org/style.json",
+    style: isFrench ? STYLE_FR : STYLE_EN,
     center: [-96, 62],
-    zoom: 3
+    zoom: 3,
+    attributionControl: false
   });
 
   map.addControl(new maplibregl.NavigationControl());
+
+  // ✅ Load GeoJSON
+  map.on("load", () => {
+    map.addSource("bathy", {
+      type: "geojson",
+      data: "https://raw.githubusercontent.com/cavanaghg-chs/bathy_map/main/data/product-results.geojson"
+    });
+
+    map.addLayer({
+      id: "bathy-fill",
+      type: "fill",
+      source: "bathy",
+      paint: {
+        "fill-color": "#228B22",
+        "fill-opacity": 0.5
+      }
+    });
+  });
 </script>
 
 </body>
