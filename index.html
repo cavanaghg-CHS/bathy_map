@@ -7,7 +7,11 @@
   <!-- ✅ OpenLayers CSS -->
   <link
     rel="stylesheet"
-    href="https://cdn.jsdelivr.net/npm/ol@7.5.2/ol{
+    href="https://cdn.jsdelivr.net/npm/ol@7.5.2/ol.css"
+  />
+
+  <style>
+    html, body, #map {
       margin: 0;
       padding: 0;
       height: 100%;
@@ -20,31 +24,35 @@
 <div id="map"></div>
 
 <!-- ✅ OpenLayers JS -->
-<script src="https://cdn.jsdelivr.net/npm/ol@7.5.2/dist/ol.jsox-style adapter for OpenLayers -->
-<script src="https://cdn.jsdelivr.net/npm/ol-mapbox-style@latest/dist/olms.jscript>
+<script src="https://cdn.jsdelivr.net/npm/ol@7.5.2/dist/ol.js"></script>
+
+<!-- ✅ REQUIRED: Mapbox‑style adapter for OpenLayers -->
+<script src="https://cdn.jsdelivr.net/npm/ol-mapbox-style@latest/dist/olms.js"></script>
+
+<script>
   /* ---------- Language detection ---------- */
   const isFrench =
     navigator.language &&
     navigator.language.toLowerCase().startsWith("fr");
 
-  /* ---------- Same Esri basemaps you used before ---------- */
+  /* ---------- Esri basemaps (same as before) ---------- */
   const STYLE_EN =
     "https://www.arcgis.com/sharing/rest/content/items/800d755712e8415aab301b9d55bc2800/resources/styles/root.json";
 
   const STYLE_FR =
     "https://www.arcgis.com/sharing/rest/content/items/70e9deb5019d49cc88c6543887db9db5/resources/styles/root.json";
 
-  /* ---------- Create OpenLayers map ---------- */
+  /* ---------- Create map ---------- */
   const map = new ol.Map({
     target: "map",
     view: new ol.View({
       center: ol.proj.fromLonLat([-96, 62]),
       zoom: 3
     }),
-    controls: [] // no default UI
+    controls: []
   });
 
-  /* ---------- Apply Esri basemap ---------- */
+  /* ---------- Apply Esri vector basemap ---------- */
   olms.applyStyle(map, isFrench ? STYLE_FR : STYLE_EN);
 </script>
 
