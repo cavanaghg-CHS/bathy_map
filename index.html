@@ -2,16 +2,15 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Bathy Map – OpenLayers (Clean)</title>
+  <title>Bathy Map</title>
 
   <!-- OpenLayers CSS -->
   <link rel="stylesheet"
-        href="https://cdn.jsdelivr.net/npm/ol@latest/ol.css" />
+        href="https://cdn.jsdelivr.net/npm/ol@latest/ol.css">
 
   <style>
     html, body {
       margin: 0;
-      padding: 0;
       height: 100%;
     }
 
@@ -20,29 +19,48 @@
       height: 100%;
     }
 
-    /* Minimal, quiet control */
-    .toolbox {
+    /* ---- Minimal professional control ---- */
+    .toolbar {
       position: absolute;
-      top: 10px;
-      left: 10px;
-      background: white;
-      padding: 8px 10px;
-      font-size: 13px;
-      border-radius: 4px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-      z-index: 5;
+      top: 12px;
+      left: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding: 6px;
+      background: rgba(255,255,255,0.96);
+      border-radius: 6px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+      z-index: 10;
     }
 
-    .toolbox label {
-      display: block;
+    .toolbar button {
+      width: 36px;
+      height: 36px;
+      border: none;
+      border-radius: 6px;
       cursor: pointer;
-      margin-bottom: 4px;
+      background: #f3f3f3;
+      font-size: 16px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
-    .toolbox button {
+    .toolbar button:hover {
+      background: #e4e4e4;
+    }
+
+    .toolbar button.active {
+      background: #ffd700;
+    }
+
+    .toolbar .sep {
+      height: 1px;
+      background: #ccc;
+      margin: 4px 0;
       width: 100%;
-      margin-top: 6px;
-      cursor: pointer;
     }
   </style>
 </head>
@@ -51,12 +69,18 @@
 
 <div id="map"></div>
 
-<div class="toolbox">
-  <strong>Tool</strong>
-  <label><input type="radio" name="tool" value="select" checked> Select</label>
-  <label><input type="radio" name="tool" value="polygon"> Polygon</label>
-  <label><input type="radio" name="tool" value="line"> Line</label>
-  <button id="clear">Clear</button>
+<!-- Icon-only controls -->
+<div class="toolbar">
+  <!-- selection tools -->
+  <button id="toolSelect" title="Select">🖱️</button>
+  <button id="toolPolygon" title="Polygon select">⬠</button>
+  <button id="toolLine" title="Line select">／</button>
+
+  <div class="sep"></div>
+
+  <!-- zoom -->
+  <button id="zoomIn" title="Zoom in">+</button>
+  <button id="zoomOut" title="Zoom out">−</button>
 </div>
 
 <!-- OpenLayers JS -->
@@ -72,21 +96,19 @@ const bathySource = new ol.source.Vector({
 
 const bathyLayer = new ol.layer.Vector({
   source: bathySource,
-  style: feature =>
-    new ol.style.Style({
-      fill: new ol.style.Fill({
-        color: feature.get("selected")
-          ? "rgba(255,215,0,0.5)"
-          : "rgba(34,139,34,0.45)"
-      }),
-      stroke: new ol.style.Stroke({
-        color: feature.get("selected") ? "#FFD700" : "#004d00",
-        width: 2
-      })
+  style: f => new ol.style.Style({
+    fill: new ol.style.Fill({
+      color: f.get("selected")
+        ? "rgba(255,215,0,0.55)"
+        : "rgba(34,139,34,0.45)"
+    }),
+    stroke: new ol.style.Stroke({
+      color: f.get("selected") ? "#FFD700" : "#004d00",
+      width: 2
     })
+  })
 });
 
-/* Sketch layer for drawn geometry */
 const sketchSource = new ol.source.Vector();
 const sketchLayer = new ol.layer.Vector({ source: sketchSource });
 
@@ -95,25 +117,22 @@ const sketchLayer = new ol.layer.Vector({ source: sketchSource });
 const map = new ol.Map({
   target: "map",
   layers: [
-    new ol.layer.Tile({
-      source: new ol.source.OSM()
-    }),
+    new ol.layer.Tile({ source: new ol.source.OSM() }),
     bathyLayer,
     sketchLayer
   ],
   view: new ol.View({
     center: ol.proj.fromLonLat([-96, 62]),
     zoom: 3
-  })
+  }),
+  controls: [] // remove default OpenLayers UI
 });
 
 /* ---------------- Interactions ---------------- */
 
-/* Click selection (always available in Select mode) */
 const selectInteraction = new ol.interaction.Select({
   layers: [bathyLayer]
 });
-
 map.addInteraction(selectInteraction);
 
 selectInteraction.on("select", e => {
@@ -121,16 +140,18 @@ selectInteraction.on("select", e => {
   e.deselected.forEach(f => f.set("selected", false));
 });
 
-/* Draw interaction (activated per tool) */
 let drawInteraction = null;
 
-function activateDraw(type) {
+function clearDraw() {
   if (drawInteraction) {
     map.removeInteraction(drawInteraction);
     drawInteraction = null;
   }
-
   sketchSource.clear();
+}
+
+function activateDraw(type) {
+  clearDraw();
 
   drawInteraction = new ol.interaction.Draw({
     source: sketchSource,
@@ -140,45 +161,59 @@ function activateDraw(type) {
   drawInteraction.on("drawend", e => {
     let geom = e.feature.getGeometry();
 
-    /* ✅ Buffer line selections (meters) */
+    // Buffer line selections (5 km)
     if (type === "LineString") {
-      geom = geom.clone().buffer(5000); // 5 km buffer
+      geom = geom.clone().buffer(5000);
     }
 
-    /* ✅ TRUE geometry intersection (not extent!) */
-    bathySource.getFeatures().forEach(feature => {
-      if (geom.intersectsGeometry(feature.getGeometry())) {
-        feature.set("selected", true);
+    bathySource.getFeatures().forEach(f => {
+      if (geom.intersectsGeometry(f.getGeometry())) {
+        f.set("selected", true);
       }
     });
 
-    map.removeInteraction(drawInteraction);
-    drawInteraction = null;
+    clearDraw();
+    setActive(toolSelect);
   });
 
   map.addInteraction(drawInteraction);
 }
 
-/* ---------------- UI ---------------- */
+/* ---------------- Toolbar logic ---------------- */
 
-document.querySelectorAll("input[name=tool]").forEach(radio => {
-  radio.addEventListener("change", () => {
-    if (drawInteraction) {
-      map.removeInteraction(drawInteraction);
-      drawInteraction = null;
-    }
-    sketchSource.clear();
+const toolSelect  = document.getElementById("toolSelect");
+const toolPolygon = document.getElementById("toolPolygon");
+const toolLine    = document.getElementById("toolLine");
 
-    if (radio.value === "polygon") activateDraw("Polygon");
-    if (radio.value === "line") activateDraw("LineString");
-  });
-});
+function setActive(btn) {
+  document.querySelectorAll(".toolbar button")
+    .forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+}
 
-document.getElementById("clear").onclick = () => {
-  selectInteraction.getFeatures().clear();
-  bathySource.getFeatures().forEach(f => f.set("selected", false));
-  sketchSource.clear();
+toolSelect.onclick = () => {
+  clearDraw();
+  setActive(toolSelect);
 };
+
+toolPolygon.onclick = () => {
+  activateDraw("Polygon");
+  setActive(toolPolygon);
+};
+
+toolLine.onclick = () => {
+  activateDraw("LineString");
+  setActive(toolLine);
+};
+
+document.getElementById("zoomIn").onclick =
+  () => map.getView().setZoom(map.getView().getZoom() + 1);
+
+document.getElementById("zoomOut").onclick =
+  () => map.getView().setZoom(map.getView().getZoom() - 1);
+
+/* default state */
+setActive(toolSelect);
 </script>
 
 </body>
