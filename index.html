@@ -221,74 +221,59 @@ const draw = new MapboxDraw({
 
   // ✅ Modern, sleek draw styling
   styles: [
-    /* ============================
-       ACTIVE POLYGON FILL
-       ============================ */
-    {
-      id: "gl-draw-polygon-fill-active",
-      type: "fill",
-      filter: ["all",
-        ["==", "active", "true"],
-        ["==", "$type", "Polygon"]
-      ],
-      paint: {
-        "fill-color": "#facc15",   // warm gold
-        "fill-opacity": 0.18       // much lighter
-      }
-    },
-
-    /* ============================
-       OUTER HALO (SUBTLE)
-       ============================ */
-    {
-      id: "gl-draw-polygon-stroke-active-halo",
-      type: "line",
-      filter: ["all",
-        ["==", "active", "true"],
-        ["==", "$type", "Polygon"]
-      ],
-      paint: {
-        "line-color": "#0f172a",   // slate / near-black
-        "line-width": 3,
-        "line-opacity": 0.45
-      }
-    },
-
-    /* ============================
-       INNER ACCENT STROKE
-       ============================ */
-    {
-      id: "gl-draw-polygon-stroke-active",
-      type: "line",
-      filter: ["all",
-        ["==", "active", "true"],
-        ["==", "$type", "Polygon"]
-      ],
-      paint: {
-        "line-color": "#f59e0b",   // amber
-        "line-width": 1.5,
-        "line-dasharray": [1.5, 1]
-      }
-    },
-
-    /* ============================
-       VERTICES (MINIMAL)
-       ============================ */
-    {
-      id: "gl-draw-polygon-and-line-vertex-active",
-      type: "circle",
-      filter: ["all",
-        ["==", "active", "true"],
-        ["==", "meta", "vertex"]
-      ],
-      paint: {
-        "circle-radius": 4,
-        "circle-color": "#f59e0b",
-        "circle-stroke-color": "#0f172a",
-        "circle-stroke-width": 1
-      }
+  /* =========================================
+     ACTIVE POLYGON FILL  (ArcGIS Pro style)
+     ========================================= */
+  {
+    id: "gl-draw-polygon-fill-active",
+    type: "fill",
+    filter: [
+      "all",
+      ["==", "active", "true"],
+      ["==", "$type", "Polygon"]
+    ],
+    paint: {
+      "fill-color": "#4EA5FF",   // ArcGIS Pro cyan-blue
+      "fill-opacity": 0.15       // very light, professional
     }
-  ]
+  },
+
+  /* =========================================
+     POLYGON OUTLINE (clean, solid)
+     ========================================= */
+  {
+    id: "gl-draw-polygon-stroke-active",
+    type: "line",
+    filter: [
+      "all",
+      ["==", "active", "true"],
+      ["==", "$type", "Polygon"]
+    ],
+    paint: {
+      "line-color": "#2563EB",   // darker blue accent
+      "line-width": 2
+    }
+  },
+
+  /* =========================================
+     VERTICES (ArcGIS-style handles)
+     ========================================= */
+  {
+    id: "gl-draw-polygon-and-line-vertex-active",
+    type: "circle",
+    filter: [
+      "all",
+      ["==", "active", "true"],
+      ["==", "meta", "vertex"]
+    ],
+    paint: {
+      "circle-radius": 4,
+      "circle-color": "#FFFFFF",        // white core
+      "circle-stroke-color": "#2563EB", // blue ring
+      "circle-stroke-width": 2
+    }
+  }
+]
 });
 
 
