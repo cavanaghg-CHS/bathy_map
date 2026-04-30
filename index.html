@@ -42,13 +42,6 @@
 }
 
 
-    .selection-item {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 4px;
-    }
-
-
 .action-btn {
   width: 100%;
   margin-top: 6px;
@@ -103,11 +96,6 @@
   display: block;
 }
 
-<svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
-  <path d="M2 1 L2 14 L5 11 L7 15 L9 14 L7 10 L11 10 Z"
-        fill="#0f172a"/>
-</svg>
-
 
 .toolbox button {
   width: 34px;
@@ -143,7 +131,7 @@
 }
 
 
-selection-panel strong {
+.selection-panel strong {
   display: block;
   font-size: 14px;
   font-weight: 600;
@@ -396,23 +384,6 @@ map.on("load", () => {
     data: "https://raw.githubusercontent.com/cavanaghg-chs/bathy_map/main/data/product-results.geojson",
     promoteId: "documentId"
   });
-
-  map.on("style.load", () => {
-  /* ===============================
-     ACTIVE DRAW POLYGON – FILL
-     =============================== */
-  if (map.getLayer("gl-draw-polygon-fill-active")) {
-    map.setPaintProperty(
-      "gl-draw-polygon-fill-active",
-      "fill-color",
-      "#facc15" // rich gold
-    );
-    map.setPaintProperty(
-      "gl-draw-polygon-fill-active",
-      "fill-opacity",
-      0.45
-    );
-  }
 
   /* ===============================
      ACTIVE DRAW POLYGON – OUTLINE (HALO)
