@@ -96,6 +96,19 @@
   z-index: 20;
 }
 
+
+.toolbox .tool-btn img {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+<svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+  <path d="M2 1 L2 14 L5 11 L7 15 L9 14 L7 10 L11 10 Z"
+        fill="#0f172a"/>
+</svg>
+
+
 .toolbox button {
   width: 34px;
   height: 34px;
@@ -173,7 +186,11 @@ selection-panel strong {
 <div id="map"></div>
   
 <div class="toolbox">
-  <button id="toolSelect" title="Select">🖱️</button>
+  
+<button id="toolSelect" title="Select" class="tool-btn">
+  <img src="cursor.svg" alt="Select">
+</button>
+
   <button id="toolPolygon" title="Polygon">⬠</button>
   <button id="zoomIn" title="Zoom in">+</button>
   <button id="zoomOut" title="Zoom out">−</button>
