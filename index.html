@@ -7,8 +7,8 @@
   <!-- MapLibre CSS -->
   <link
     rel="stylesheet"
-    href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css"
-  margin: 0;
+    href="https://unpkg.com/maplibre-gl@3.6. html, body, #map {
+      margin: 0;
       padding: 0;
       height: 100%;
     }
@@ -20,77 +20,57 @@
 <div id="map"></div>
 
 <!-- MapLibre JS -->
-<script src="https://unpkg.com/maplibre-gl@3.6.2e-gl.js
+<script src="https://unpkg.com/maplibre-gl@3.6.2/distjs</script>
 
 <script>
-/* =====================================================
-   LANGUAGE-AWARE BASEMAP WITH SAFE FALLBACK
-   ===================================================== */
+  // Detect browser language
+  const isFrench =
+    navigator.language &&
+    navigator.language.toLowerCase().startsWith("fr");
 
-const STYLE_EN =
-  "https://www.arcgis.com/sharing/rest/content/items/800d755712e8415aab301b9d55bc2800/resources/styles/root.json";
+  const STYLE_EN =
+    "https://www.arcgis.com/sharing/rest/content/items/800d755712e8415aab301b9d55bc2800/resources/styles/root.json";
 
-const STYLE_FR =
-  "https://www.arcgis.com/sharing/rest/content/items/70e9deb5019d49cc88c6543887db9db5/resources/styles/root.json";
+  const STYLE_FR =
+    "https://www.arcgis.com/sharing/rest/content/items/70e9deb5019d49cc88c6543887db9db5/resources/styles/root.json";
 
-const isFrench =
-  navigator.language &&
-  navigator.language.toLowerCase().startsWith("fr");
-
-let styleUsed = isFrench ? STYLE_FR : STYLE_EN;
-
-const map = new maplibregl.Map({
-  container: "map",
-  style: styleUsed,
-  center: [-96, 62],
-  zoom: 3,
-  attributionControl: false
-});
-
-map.addControl(new maplibregl.NavigationControl());
-
-/* ---- FALLBACK if chosen style fails ---- */
-map.on("error", (e) => {
-  if (e && e.error && styleUsed === STYLE_FR) {
-    console.warn("FR style failed, falling back to EN.");
-    styleUsed = STYLE_EN;
-    map.setStyle(STYLE_EN);
-  }
-});
-
-/* =====================================================
-   BATHY POLYGONS
-   ===================================================== */
-
-map.on("style.load", () => {
-  if (map.getSource("bathy")) return;
-
-  map.addSource("bathy", {
-    type: "geojson",
-    data: "https://raw.githubusercontent.com/cavanaghg-chs/bathy_map/main/data/product-results.geojson",
-    promoteId: "documentId"
+  const map = new maplibregl.Map({
+    container: "map",
+    style: isFrench ? STYLE_FR : STYLE_EN,
+    center: [-96, 62],
+    zoom: 3,
+    attributionControl: false
   });
 
-  map.addLayer({
-    id: "bathy-fill",
-    type: "fill",
-    source: "bathy",
-    paint: {
-      "fill-color": "#228B22",
-      "fill-opacity": 0.4
-    }
-  });
+  map.addControl(new maplibregl.NavigationControl());
 
-  map.addLayer({
-    id: "bathy-outline",
-    type: "line",
-    source: "bathy",
-    paint: {
-      "line-color": "#004d00",
-      "line-width": 1.5
-    }
+  map.on("load", () => {
+    map.addSource("bathy", {
+      type: "geojson",
+      data: "https://raw.githubusercontent.com/cavanaghg-chs/bathy_map/main/data/product-results.geojson",
+      promoteId: "documentId"
+    });
+
+    map.addLayer({
+      id: "bathy-fill",
+      type: "fill",
+      source: "bathy",
+      paint: {
+        "fill-color": "#228B22",
+        "fill-opacity": 0.4
+      }
+    });
+
+    map.addLayer({
+      id: "bathy-outline",
+      type: "line",
+      source: "bathy",
+      paint: {
+        "line-color": "#004d00",
+        "line-width": 1.5
+      }
+    });
   });
-});
 </script>
 
 </body>
