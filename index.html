@@ -2,19 +2,15 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Esri English Basemap Test</title>
+  <title>Esri English Basemap (Raster – Verified)</title>
 
   <!-- OpenLayers CSS -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@7.5.2/ol.css">
 
   <style>
-    html, body {
+    html, body, #map {
       margin: 0;
       padding: 0;
-      height: 100%;
-    }
-    #map {
-      width: 100%;
       height: 100%;
     }
   </style>
@@ -27,26 +23,24 @@
 <!-- OpenLayers JS -->
 <script src="https://cdn.jsdelivr.net/npm/ol@7.5.2/dist/ol.js"></script>
 
-<!-- Mapbox-style adapter for OpenLayers -->
-<script src="https://cdn.jsdelivr.net/npm/ol-mapbox-style@6.11.5/dist/olms.js"></script>
-
 <script>
-  // Esri World Topographic Map (English)
-  const ESRI_EN_STYLE =
-    "https://www.arcgis.com/sharing/rest/content/items/800d755712e8415aab301b9d55bc2800/resources/styles/root.json";
+  // ✅ Esri World Topographic Map (English, raster tiles)
+  const esriTopo = new ol.layer.Tile({
+    source: new ol.source.XYZ({
+      url: "https://services.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}",
+      crossOrigin: "anonymous"
+    })
+  });
 
-  // Create the map
   const map = new ol.Map({
     target: "map",
+    layers: [esriTopo],
     view: new ol.View({
       center: ol.proj.fromLonLat([-96, 62]),
       zoom: 3
     }),
     controls: []
   });
-
-  // Apply Esri vector basemap
-  olms.applyStyle(map, ESRI_EN_STYLE);
 </script>
 
 </body>
