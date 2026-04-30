@@ -19,10 +19,51 @@
       height: 100%;
     }
 
-    .selection-panel {
+    /* Hide Mapbox Draw default UI */
+    .mapbox-gl-draw_ctrl-draw-btn,
+    .mapbox-gl-draw_ctrl-trash {
+      display: none !important;
+    }
+
+    /* Clean icon-only toolbox (OpenLayers-like) */
+    .toolbox {
       position: absolute;
       top: 10px;
       left: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.95);
+      padding: 6px;
+      border-radius: 6px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+      z-index: 11;
+    }
+
+    .toolbox button {
+      width: 34px;
+      height: 34px;
+      border: none;
+      border-radius: 6px;
+      background: #f3f3f3;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .toolbox button:hover {
+      background: #e5e5e5;
+    }
+
+    .toolbox button.active {
+      background: #ffd700;
+    }
+
+    /* Selection panel (unchanged) */
+    .selection-panel {
+      position: absolute;
+      top: 10px;
+      left: 60px;
       width: 260px;
       background: white;
       padding: 10px;
@@ -51,6 +92,14 @@
 
 <div id="map"></div>
 
+<!-- Clean toolbar -->
+<div class="toolbox">
+  <button id="toolSelect" title="Select">🖱️</button>
+  <button id="toolPolygon" title="Polygon">⬠</button>
+  <button id="zoomIn" title="Zoom in">+</button>
+  <button id="zoomOut" title="Zoom out">−</button>
+</div>
+
 <div class="selection-panel">
   <strong>Selected Documents</strong>
   <div id="selectionList"></div>
@@ -59,16 +108,25 @@
   <button id="exportJsonBtn" class="action-btn">Export JSON</button>
 </div>
 
-<!-- ✅ MapLibre JS -->
+<!-- MapLibre JS -->
 <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
 
-<!-- ✅ Mapbox Draw JS (FIXED) -->
+<!-- Required alias for Mapbox Draw -->
+<script>
+  window.mapboxgl = maplibregl;
+</script>
+
+<!-- Mapbox Draw -->
 <script src="https://unpkg.com/@mapbox/mapbox-gl-draw@1.5.0/dist/mapbox-gl-draw.js"></script>
 
-<!-- ✅ Turf JS (FIXED) -->
+<!-- Turf -->
 <script src="https://unpkg.com/@turf/turf@6.5.0/turf.min.js"></script>
 
 <script>
+/* =========================================================
+   BASEMAP (LOCKED — DO NOT CHANGE)
+   ========================================================= */
+
 const isFrench = navigator.language?.toLowerCase().startsWith("fr");
 
 const STYLE_EN =
@@ -86,11 +144,46 @@ const map = new maplibregl.Map({
 
 map.addControl(new maplibregl.NavigationControl());
 
+/* =========================================================
+   DRAW SETUP (UI HIDDEN)
+   ========================================================= */
+
 const draw = new MapboxDraw({
   displayControlsDefault: false,
   controls: { polygon: true, trash: true }
 });
 map.addControl(draw, "top-left");
+
+/* =========================================================
+   CLEAN TOOLBAR BEHAVIOR
+   ========================================================= */
+
+function setActive(btn) {
+  document.querySelectorAll(".toolbox button")
+    .forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+}
+
+document.getElementById("toolSelect").onclick = e => {
+  draw.changeMode("simple_select");
+  setActive(e.target);
+};
+
+document.getElementById("toolPolygon").onclick = e => {
+  draw.changeMode("draw_polygon");
+  setActive(e.target);
+};
+
+document.getElementById("zoomIn").onclick = () => map.zoomIn();
+document.getElementById("zoomOut").onclick = () => map.zoomOut();
+
+/* Default mode */
+draw.changeMode("simple_select");
+document.getElementById("toolSelect").classList.add("active");
+
+/* =========================================================
+   SELECTION STATE
+   ========================================================= */
 
 const selectedDocs = new Set();
 const listEl = document.getElementById("selectionList");
@@ -128,25 +221,26 @@ document.getElementById("clearBtn").onclick = () => {
 };
 
 document.getElementById("exportCsvBtn").onclick = () => {
-  const blob = new Blob([Array.from(selectedDocs).join("\n")], { type: "text/csv" });
-  download(blob, "selected_documents.csv");
+  download(Array.from(selectedDocs).join("\n"), "selected_documents.csv");
 };
 
 document.getElementById("exportJsonBtn").onclick = () => {
-  const blob = new Blob(
-    [JSON.stringify(Array.from(selectedDocs), null, 2)],
-    { type: "application/json" }
-  );
-  download(blob, "selected_documents.json");
+  download(JSON.stringify([...selectedDocs], null, 2),
+           "selected_documents.json");
 };
 
-function download(blob, name) {
+function download(content, name) {
+  const blob = new Blob([content]);
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
   a.download = name;
   a.click();
   URL.revokeObjectURL(a.href);
 }
+
+/* =========================================================
+   DATA & INTERACTIONS
+   ========================================================= */
 
 let cached = [];
 
@@ -161,7 +255,10 @@ map.on("load", () => {
     id: "bathy-fill",
     type: "fill",
     source: "bathy",
-    paint: { "fill-color": "#228B22", "fill-opacity": 0.45 }
+    paint: {
+      "fill-color": "#228B22",
+      "fill-opacity": 0.45
+    }
   });
 
   map.addLayer({
@@ -171,7 +268,8 @@ map.on("load", () => {
     paint: {
       "line-color": [
         "case",
-        ["boolean", ["feature-state", "selected"], false], "#FFD700",
+        ["boolean", ["feature-state", "selected"], false],
+        "#FFD700",
         "#004d00"
       ],
       "line-width": 2
@@ -182,9 +280,13 @@ map.on("load", () => {
     cached = map.querySourceFeatures("bathy");
   });
 
-  map.on("click", "bathy-fill", e => select(e.features[0].id));
+  map.on("click", "bathy-fill", e => {
+    const id = e.features[0].id;
+    selectedDocs.has(id) ? deselect(id) : select(id);
+  });
 });
 
+/* Polygon spatial selection */
 map.on("draw.create", e => {
   const poly = e.features[0];
   cached.forEach(f => {
