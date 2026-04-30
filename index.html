@@ -96,7 +96,6 @@
   display: block;
 }
 
-
 .toolbox button {
   width: 34px;
   height: 34px;
@@ -384,6 +383,23 @@ map.on("load", () => {
     data: "https://raw.githubusercontent.com/cavanaghg-chs/bathy_map/main/data/product-results.geojson",
     promoteId: "documentId"
   });
+
+  map.on("style.load", () => {
+  /* ===============================
+     ACTIVE DRAW POLYGON – FILL
+     =============================== */
+  if (map.getLayer("gl-draw-polygon-fill-active")) {
+    map.setPaintProperty(
+      "gl-draw-polygon-fill-active",
+      "fill-color",
+      "#facc15" // rich gold
+    );
+    map.setPaintProperty(
+      "gl-draw-polygon-fill-active",
+      "fill-opacity",
+      0.45
+    );
+  }
 
   /* ===============================
      ACTIVE DRAW POLYGON – OUTLINE (HALO)
