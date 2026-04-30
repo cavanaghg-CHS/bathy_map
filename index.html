@@ -2,10 +2,13 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Bathy Map – Recovery</title>
+  <title>MapLibre Proof</title>
 
-  https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css
-  https://unpkg.com/@mapbox/mapbox-gl-draw@1.5.0/dist/mapbox-gl-draw.css
+  <!-- ✅ MapLibre CSS -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css"
+  >
 
   <style>
     html, body, #map {
@@ -17,40 +20,20 @@
 </head>
 
 <body>
+
 <div id="map"></div>
 
-<!-- MapLibre -->
-https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.jsscript>
-
-<!-- REQUIRED alias BEFORE Draw -->
-<script>
-  window.mapboxgl = maplibregl;
-</script>
-
-<!-- Mapbox Draw -->
-https://unpkg.com/@mapbox/mapbox-gl-draw@1.5.0/dist/mapbox-gl-draw.jsscript>
-
-<!-- Turf -->
-https://unpkg.com/@turf/turf@6.5.0/turf.min.js
+<!-- ✅ MapLibre JS -->
+<script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
 
 <script>
-  const STYLE =
-    "https://www.arcgis.com/sharing/rest/content/items/800d755712e8415aab301b9d55bc2800/resources/styles/root.json";
-
   const map = new maplibregl.Map({
     container: "map",
-    style: STYLE,
+    style: "https://www.arcgis.com/sharing/rest/content/items/800d755712e8415aab301b9d55bc2800/resources/styles/root.json",
     center: [-96, 62],
     zoom: 3
   });
-
-  map.addControl(new maplibregl.NavigationControl());
-
-  const draw = new MapboxDraw({
-    displayControlsDefault: false,
-    controls: { polygon: true, trash: true }
-  });
-  map.addControl(draw);
 </script>
+
 </body>
 </html>
