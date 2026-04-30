@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <title>Bathy Map</title>
 
-  <!-- ✅ OpenLayers CSS -->
+  <!-- OpenLayers CSS -->
   <link
     rel="stylesheet"
     href="https://cdn.jsdelivr.net/npm/ol@latest/ol.css"
@@ -21,7 +21,7 @@
       height: 100%;
     }
 
-    /* ---- Minimal professional control ---- */
+    /* Professional icon-only control */
     .toolbar {
       position: absolute;
       top: 12px;
@@ -30,7 +30,7 @@
       flex-direction: column;
       gap: 6px;
       padding: 6px;
-      background: rgba(255,255,255,0.96);
+      background: rgba(255,255,255,0.97);
       border-radius: 6px;
       box-shadow: 0 6px 20px rgba(0,0,0,0.25);
       z-index: 10;
@@ -41,8 +41,8 @@
       height: 36px;
       border: none;
       border-radius: 6px;
-      cursor: pointer;
       background: #f3f3f3;
+      cursor: pointer;
       font-size: 16px;
       font-weight: 600;
       display: flex;
@@ -71,25 +71,51 @@
 
 <div id="map"></div>
 
-<!-- Icon-only controls -->
+<!-- Icon-only toolbar -->
 <div class="toolbar">
-  <!-- selection tools -->
   <button id="toolSelect" title="Select">🖱️</button>
   <button id="toolPolygon" title="Polygon select">⬠</button>
   <button id="toolLine" title="Line select">／</button>
-
   <div class="sep"></div>
-
-  <!-- zoom -->
   <button id="zoomIn" title="Zoom in">+</button>
   <button id="zoomOut" title="Zoom out">−</button>
 </div>
 
-<!-- ✅ OpenLayers JS -->
+<!-- OpenLayers -->
 <script src="https://cdn.jsdelivr.net/npm/ol@latest/dist/ol.js"></script>
 
+<!-- OpenLayers Mapbox Style adapter -->
+<script src="https://cdn.jsdelivr.net/npm/ol-mapbox-style@latest/dist/olms.js"></script>
+
 <script>
-/* ---------------- Data layers ---------------- */
+/* ---------------- Esri basemap (EN / FR) ---------------- */
+
+// Browser language detection
+const isFrench = navigator.language &&
+  navigator.language.toLowerCase().startsWith("fr");
+
+// Same Esri vector basemaps you used before
+const STYLE_EN =
+  "https://www.arcgis.com/sharing/rest/content/items/800d755712e8415aab301b9d55bc2800/resources/styles/root.json";
+
+const STYLE_FR =
+  "https://www.arcgis.com/sharing/rest/content/items/70e9deb5019d49cc88c6543887db9db5/resources/styles/root.json";
+
+/* ---------------- Map ---------------- */
+
+const map = new ol.Map({
+  target: "map",
+  view: new ol.View({
+    center: ol.proj.fromLonLat([-96, 62]),
+    zoom: 3
+  }),
+  controls: [] // remove default OL controls
+});
+
+// Apply Esri vector basemap
+olms.applyStyle(map, isFrench ? STYLE_FR : STYLE_EN);
+
+/* ---------------- Bathy layer ---------------- */
 
 const bathySource = new ol.source.Vector({
   url: "https://raw.githubusercontent.com/cavanaghg-chs/bathy_map/main/data/product-results.geojson",
@@ -111,24 +137,11 @@ const bathyLayer = new ol.layer.Vector({
   })
 });
 
+map.addLayer(bathyLayer);
+
+/* Sketch layer */
 const sketchSource = new ol.source.Vector();
-const sketchLayer = new ol.layer.Vector({ source: sketchSource });
-
-/* ---------------- Map ---------------- */
-
-const map = new ol.Map({
-  target: "map",
-  layers: [
-    new ol.layer.Tile({ source: new ol.source.OSM() }),
-    bathyLayer,
-    sketchLayer
-  ],
-  view: new ol.View({
-    center: ol.proj.fromLonLat([-96, 62]),
-    zoom: 3
-  }),
-  controls: [] // remove default UI
-});
+map.addLayer(new ol.layer.Vector({ source: sketchSource }));
 
 /* ---------------- Interactions ---------------- */
 
@@ -163,9 +176,9 @@ function activateDraw(type) {
   drawInteraction.on("drawend", e => {
     let geom = e.feature.getGeometry();
 
-    // Buffer line selection (5 km)
+    // Buffer line selections (meters)
     if (type === "LineString") {
-      geom = geom.clone().buffer(5000);
+      geom = geom.clone().buffer(5000); // 5 km
     }
 
     bathySource.getFeatures().forEach(f => {
@@ -214,7 +227,7 @@ document.getElementById("zoomIn").onclick =
 document.getElementById("zoomOut").onclick =
   () => map.getView().setZoom(map.getView().getZoom() - 1);
 
-/* default active tool */
+// Default tool
 setActive(toolSelect);
 </script>
 
