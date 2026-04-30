@@ -2,16 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Esri Basemap Test</title>
+  <title>Esri Basemap Proof</title>
 
-  <!-- OpenLayers CSS -->
-  <link
-    rel="stylesheet"
-    href="https://cdn.jsdelivr.net/npm/ol@latest/ol.css"
-  />
-
-  <style>
-    html, body, #map {
+  <!-- ✅ OpenLayers CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@html, body, #map {
       margin: 0;
       height: 100%;
     }
@@ -19,13 +13,12 @@
 </head>
 
 <body>
+
 <div id="map"></div>
 
-<!-- OpenLayers -->
-<script src="https://cdn.jsdelivr.net/npm/ol@latest/dist/ol.js"></script>
-
-<!-- ✅ REQUIRED: Mapbox style adapter -->
-<script src="https://cdn.jsdelivr.net/npm/ol-mapbox-style@latest/dist/olms.js"></script>
+<!-- ✅ OpenLayers JS -->
+<script src="https://cdn.jsdelivr.net/npm/ol@latest<!-- ✅ REQUIRED for Esri vector basemaps -->
+<script src="https://cdn.jsdelivr.net/npm/ol-mapbox-style@latest</script>
 
 <script>
   const isFrench =
@@ -47,8 +40,9 @@
     controls: []
   });
 
-  // ✅ This will now work
+  // ✅ This WILL show the basemap if everything loaded correctly
   olms.applyStyle(map, isFrench ? STYLE_FR : STYLE_EN);
 </script>
+
 </body>
 </html>
