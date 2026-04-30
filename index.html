@@ -2,17 +2,13 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Esri Basemap – OpenLayers</title>
+  <title>Esri Basemap – OpenLayers (Verified)</title>
 
-  <!-- ✅ OpenLayers CSS -->
+  <!-- OpenLayers CSS -->
   <link
     rel="stylesheet"
     href="https://cdn.jsdelivr.net/npm/ol@7.5.2/ol.css"
-  />
-
-  <style>
-    html, body, #map {
-      margin: 0;
+  margin: 0;
       padding: 0;
       height: 100%;
     }
@@ -23,10 +19,10 @@
 
 <div id="map"></div>
 
-<!-- ✅ OpenLayers JS -->
-<script src="https://cdn.jsdelivr.net/npm/ol@7.5.2/dist/ol.js"></script>
+<!-- OpenLayers JS -->
+<script src="https://cdn.jsdelivr.net/npm/ol@7.5./script>
 
-<!-- ✅ REQUIRED: Mapbox-style adapter for OpenLayers -->
+<!-- Mapbox-style adapter for OpenLayers -->
 <script src="https://cdn.jsdelivr.net/npm/ol-mapbox-style@6.11.5/dist/olms.js"></script>
 
 <script>
@@ -35,14 +31,14 @@
     navigator.language &&
     navigator.language.toLowerCase().startsWith("fr");
 
-  // Esri vector basemaps (same ones you used with MapLibre)
+  // Esri vector basemaps (same as your MapLibre version)
   const STYLE_EN =
     "https://www.arcgis.com/sharing/rest/content/items/800d755712e8415aab301b9d55bc2800/resources/styles/root.json";
 
   const STYLE_FR =
     "https://www.arcgis.com/sharing/rest/content/items/70e9deb5019d49cc88c6543887db9db5/resources/styles/root.json";
 
-  // Create OpenLayers map
+  // Create the OpenLayers map
   const map = new ol.Map({
     target: "map",
     view: new ol.View({
@@ -52,8 +48,8 @@
     controls: [] // no default UI
   });
 
-  // Apply Esri vector basemap
-  olms.apply(map, isFrench ? STYLE_FR : STYLE_EN);
+  // Apply the Esri basemap (this is the critical line)
+  olms.applyStyle(map, isFrench ? STYLE_FR : STYLE_EN);
 </script>
 
 </body>
