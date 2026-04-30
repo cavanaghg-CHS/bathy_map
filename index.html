@@ -217,36 +217,55 @@ map.addControl(new maplibregl.NavigationControl());
 
 const draw = new MapboxDraw({
   displayControlsDefault: false,
-  controls: { polygon: true, trash: true }
+  controls: { polygon: true, trash: true },
+
+  // ✅ OVERRIDE DRAW STYLES (this is the key)
+  styles: [
+    // Active polygon fill
+    {
+      id: "gl-draw-polygon-fill-active",
+      type: "fill",
+      filter: ["all",
+        ["==", "active", "true"],
+        ["==", "$type", "Polygon"]
+      ],
+      paint: {
+        "fill-color": "#facc15",      // strong gold
+        "fill-opacity": 0.45
+      }
+    },
+
+    // Active polygon outer outline (halo)
+    {
+      id: "gl-draw-polygon-stroke-active",
+      type: "line",
+      filter: ["all",
+        ["==", "active", "true"],
+        ["==", "$type", "Polygon"]
+      ],
+      paint: {
+        "line-color": "#111827",      // near-black
+        "line-width": 4
+      }
+    },
+
+    // Polygon vertices
+    {
+      id: "gl-draw-polygon-and-line-vertex-active",
+      type: "circle",
+      filter: ["all",
+        ["==", "active", "true"],
+        ["==", "meta", "vertex"]
+      ],
+      paint: {
+        "circle-radius": 5,
+        "circle-color": "#f59e0b",
+        "circle-stroke-color": "#111827",
+        "circle-stroke-width": 1.5
+      }
+    }
+  ]
 });
-map.addControl(draw, "top-left");
-
-  function restyleActiveDraw() {
-  if (map.getLayer("gl-draw-polygon-fill-active")) {
-    map.setPaintProperty(
-      "gl-draw-polygon-fill-active",
-      "fill-color",
-      "#facc15"
-    );
-    map.setPaintProperty(
-      "gl-draw-polygon-fill-active",
-      "fill-opacity",
-      0.45
-    );
-  }
-
-  if (map.getLayer("gl-draw-polygon-stroke-active")) {
-    map.setPaintProperty(
-      "gl-draw-polygon-stroke-active",
-      "line-color",
-      "#111827"
-    );
-    map.setPaintProperty(
-      "gl-draw-polygon-stroke-active",
-      "line-width",
-      4
-    );
-  }
 
   if (map.getLayer("gl-draw-polygon-and-line-vertex-active")) {
     map.setPaintProperty(
