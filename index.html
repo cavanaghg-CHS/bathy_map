@@ -200,6 +200,7 @@
 </button>
 
   <button id="toolPolygon" title="Polygon">⬠</button>
+  <button id="toolLine" title="Line select">／</button
   <button id="zoomIn" title="Zoom in">+</button>
   <button id="zoomOut" title="Zoom out">−</button>
 </div>
@@ -242,7 +243,7 @@ map.addControl(new maplibregl.NavigationControl());
 
 const draw = new MapboxDraw({
   displayControlsDefault: false,
-  controls: { polygon: true, trash: true },
+  controls: { polygon: true, line_string: true, trash: true },
 
   // ✅ Modern, sleek draw styling
   styles: [
@@ -320,6 +321,11 @@ toolSelect.onclick = e => {
 
 toolPolygon.onclick = e => {
   draw.changeMode("draw_polygon");
+  setActive(e.target);
+};
+
+toolLine.onclick = e => {
+  draw.changeMode("draw_line_string");
   setActive(e.target);
 };
 
@@ -487,13 +493,29 @@ map.on("load", () => {
 });
 
 map.on("draw.create", e => {
-  const poly = e.features[0];
-  cached.forEach(f => {
-    if (turf.booleanIntersects(poly, f)) {
-      select(f.id);
-    }
-  });
+  const feature = e.features[0];
+
+  // Existing polygon selection
+  if (feature.geometry.type === "Polygon") {
+    cached.forEach(f => {
+      if (turf.booleanIntersects(feature, f)) {
+        select(f.id);
+      }
+    });
+  }
+
+  // ✅ NEW: line-based selection
+  if (feature.geometry.type === "LineString") {
+    const buffered = turf.buffer(feature, 0.5, { units: "kilometers" });
+
+    cached.forEach(f => {
+      if (turf.booleanIntersects(buffered, f)) {
+        select(f.id);
+      }
+    });
+  }
 });
+``
 </script>
 
 </body>
