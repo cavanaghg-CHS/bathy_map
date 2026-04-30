@@ -6,19 +6,20 @@
 
   <!-- MapLibre CSS -->
   <link rel="stylesheet"
-        href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre <link rel="stylesheet"
+        href="https://unpkg.com/maplibre-gl@3.6.2/distCSS -->
+  <link rel="stylesheet"
         href="https://unpkg.com/@mapbox/mapbox-gl-draw@1.5.0/dist/mapbox-gl-draw.css    margin: 0;
       padding: 0;
       height: 100%;
     }
 
-    /* Hide default Mapbox Draw UI */
+    /* Hide default Draw UI */
     .mapbox-gl-draw_ctrl-draw-btn,
     .mapbox-gl-draw_ctrl-trash {
       display: none !important;
     }
 
-    /* Clean OpenLayers-style toolbox */
+    /* Clean OpenLayers-style toolbar */
     .toolbox {
       position: absolute;
       top: 10px;
@@ -81,7 +82,7 @@
 
 <div id="map"></div>
 
-<!-- Clean icon toolbar -->
+<!-- Clean toolbar -->
 <div class="toolbox">
   <button id="toolSelect" title="Select">🖱️</button>
   <button id="toolPolygon" title="Polygon">⬠</button>
@@ -97,22 +98,22 @@
   <button id="exportJsonBtn" class="action-btn">Export JSON</button>
 </div>
 
-<!-- MapLibre -->
-<script src="https://unpkg.com/map2/dist/maplibre-gl.js
+<!-- MapLibre JS -->
+<script src="https://unpkg.com/maplibre-gl@3.6.2e-gl.js
 
 <!-- Mapbox Draw compatibility -->
 <script>
   window.mapboxgl = maplibregl;
 </script>
 
-<!-- Mapbox Draw -->
+<!-- ✅ Mapbox Draw -->
 <script src="https://unpkg.com/@mapbox/mapbox-gl-draw@1.5.0/dist/mapbox-gl-draw.js"></script>
 
-<!-- Turf -->
+<!-- ✅ Turf -->
 <script src="https://unpkg.com/@turf/turf@6.5.0/turf.min.js"></script>
 
 <script>
-/* ================= BASEMAP ================= */
+/* ================= BASEMAP (DO NOT TOUCH) ================= */
 
 const isFrench = navigator.language?.toLowerCase().startsWith("fr");
 
@@ -150,22 +151,8 @@ map.on("load", () => {
     }
 
     if (layer.id.includes("gl-draw-polygon-stroke.active")) {
-      map.setPaintProperty(layer.id, "line-color", "#333333"); /* casing */
+      map.setPaintProperty(layer.id, "line-color", "#333333"); // casing
       map.setPaintProperty(layer.id, "line-width", 6);
-    }
-
-    if (layer.id.includes("gl-draw-polygon-stroke.active")) {
-      map.addLayer({
-        id: layer.id + "-inner",
-        type: "line",
-        source: layer.source,
-        filter: layer.filter,
-        paint: {
-          "line-color": "#ff9900",
-          "line-width": 3,
-          "line-dasharray": [2, 1]
-        }
-      }, layer.id);
     }
 
     if (layer.id.includes("gl-draw-polygon-and-line-vertex.active")) {
@@ -201,7 +188,7 @@ zoomOut.onclick = () => map.zoomOut();
 draw.changeMode("simple_select");
 toolSelect.classList.add("active");
 
-/* ================= SELECTION STATE ================= */
+/* ================= SELECTION ================= */
 
 const selectedDocs = new Set();
 const listEl = document.getElementById("selectionList");
@@ -230,8 +217,6 @@ function deselect(id) {
   updateList();
 }
 
-/* ================= EXPORT ================= */
-
 clearBtn.onclick = () => {
   selectedDocs.forEach(id =>
     map.setFeatureState({ source: "bathy", id }, { selected: false })
@@ -240,23 +225,7 @@ clearBtn.onclick = () => {
   updateList();
 };
 
-exportCsvBtn.onclick = () =>
-  download([...selectedDocs].join("\n"), "selected_documents.csv");
-
-exportJsonBtn.onclick = () =>
-  download(JSON.stringify([...selectedDocs], null, 2),
-           "selected_documents.json");
-
-function download(content, name) {
-  const blob = new Blob([content]);
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = name;
-  a.click();
-  URL.revokeObjectURL(a.href);
-}
-
-/* ================= DATA & SELECTION ================= */
+/* ================= DATA ================= */
 
 let cached = [];
 
