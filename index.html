@@ -5,31 +5,20 @@
   <title>Bathy Map</title>
 
   <!-- MapLibre CSS -->
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css"
-  />
-
-  <!-- Mapbox Draw CSS -->
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/@mapbox/mapbox-gl-draw@1.5.0/dist/mapbox-gl-draw.css"
-  />
-
-  <style>
-    html, body, #map {
-      margin: 0;
+  <link rel="stylesheet"
+        href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre <link rel="stylesheet"
+        href="https://unpkg.com/@mapbox/mapbox-gl-draw@1.5.0/dist/mapbox-gl-draw.css    margin: 0;
       padding: 0;
       height: 100%;
     }
 
-    /* Hide Mapbox Draw default buttons */
+    /* Hide default Mapbox Draw UI */
     .mapbox-gl-draw_ctrl-draw-btn,
     .mapbox-gl-draw_ctrl-trash {
       display: none !important;
     }
 
-    /* Clean icon-only toolbar */
+    /* Clean OpenLayers-style toolbox */
     .toolbox {
       position: absolute;
       top: 10px;
@@ -53,10 +42,6 @@
       cursor: pointer;
       font-size: 16px;
       font-weight: 600;
-    }
-
-    .toolbox button:hover {
-      background: #e5e5e5;
     }
 
     .toolbox button.active {
@@ -96,12 +81,12 @@
 
 <div id="map"></div>
 
-<!-- Clean toolbar -->
+<!-- Clean icon toolbar -->
 <div class="toolbox">
   <button id="toolSelect" title="Select">🖱️</button>
   <button id="toolPolygon" title="Polygon">⬠</button>
-  <button id="zoomIn" title="Zoom in">+</button>
-  <button id="zoomOut" title="Zoom out">−</button>
+  <button id="zoomIn">+</button>
+  <button id="zoomOut">−</button>
 </div>
 
 <div class="selection-panel">
@@ -112,10 +97,10 @@
   <button id="exportJsonBtn" class="action-btn">Export JSON</button>
 </div>
 
-<!-- MapLibre JS -->
-<script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+<!-- MapLibre -->
+<script src="https://unpkg.com/map2/dist/maplibre-gl.js
 
-<!-- Required alias for Mapbox Draw -->
+<!-- Mapbox Draw compatibility -->
 <script>
   window.mapboxgl = maplibregl;
 </script>
@@ -127,7 +112,7 @@
 <script src="https://unpkg.com/@turf/turf@6.5.0/turf.min.js"></script>
 
 <script>
-/* ================= BASEMAP (LOCKED) ================= */
+/* ================= BASEMAP ================= */
 
 const isFrench = navigator.language?.toLowerCase().startsWith("fr");
 
@@ -159,28 +144,40 @@ map.addControl(draw);
 map.on("load", () => {
   map.getStyle().layers.forEach(layer => {
 
-    // Active polygon fill
     if (layer.id.includes("gl-draw-polygon-fill.active")) {
       map.setPaintProperty(layer.id, "fill-color", "#ffcc33");
       map.setPaintProperty(layer.id, "fill-opacity", 0.45);
     }
 
-    // Active polygon outline
     if (layer.id.includes("gl-draw-polygon-stroke.active")) {
-      map.setPaintProperty(layer.id, "line-color", "#ff9900");
-      map.setPaintProperty(layer.id, "line-width", 3);
-      map.setPaintProperty(layer.id, "line-dasharray", [2, 1]);
+      map.setPaintProperty(layer.id, "line-color", "#333333"); /* casing */
+      map.setPaintProperty(layer.id, "line-width", 6);
     }
 
-    // Polygon vertices
+    if (layer.id.includes("gl-draw-polygon-stroke.active")) {
+      map.addLayer({
+        id: layer.id + "-inner",
+        type: "line",
+        source: layer.source,
+        filter: layer.filter,
+        paint: {
+          "line-color": "#ff9900",
+          "line-width": 3,
+          "line-dasharray": [2, 1]
+        }
+      }, layer.id);
+    }
+
     if (layer.id.includes("gl-draw-polygon-and-line-vertex.active")) {
       map.setPaintProperty(layer.id, "circle-radius", 5);
       map.setPaintProperty(layer.id, "circle-color", "#ff6600");
+      map.setPaintProperty(layer.id, "circle-stroke-color", "#333333");
+      map.setPaintProperty(layer.id, "circle-stroke-width", 1.5);
     }
   });
 });
 
-/* ================= TOOLBAR MODES ================= */
+/* ================= TOOLBAR ================= */
 
 function setActive(btn) {
   document.querySelectorAll(".toolbox button")
@@ -198,7 +195,7 @@ toolPolygon.onclick = e => {
   setActive(e.target);
 };
 
-zoomIn.onclick = () => map.zoomIn();
+zoomIn.onclick  = () => map.zoomIn();
 zoomOut.onclick = () => map.zoomOut();
 
 draw.changeMode("simple_select");
@@ -233,6 +230,8 @@ function deselect(id) {
   updateList();
 }
 
+/* ================= EXPORT ================= */
+
 clearBtn.onclick = () => {
   selectedDocs.forEach(id =>
     map.setFeatureState({ source: "bathy", id }, { selected: false })
@@ -245,7 +244,8 @@ exportCsvBtn.onclick = () =>
   download([...selectedDocs].join("\n"), "selected_documents.csv");
 
 exportJsonBtn.onclick = () =>
-  download(JSON.stringify([...selectedDocs], null, 2), "selected_documents.json");
+  download(JSON.stringify([...selectedDocs], null, 2),
+           "selected_documents.json");
 
 function download(content, name) {
   const blob = new Blob([content]);
@@ -256,7 +256,7 @@ function download(content, name) {
   URL.revokeObjectURL(a.href);
 }
 
-/* ================= DATA ================= */
+/* ================= DATA & SELECTION ================= */
 
 let cached = [];
 
