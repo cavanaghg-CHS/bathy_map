@@ -6,20 +6,21 @@
 
   <!-- MapLibre CSS -->
   <link rel="stylesheet"
-        href="https://unpkg.com/maplibre-gl@3.6.2/distCSS -->
+        href="https://unpkg.com/maplibre-glapbox Draw CSS -->
   <link rel="stylesheet"
-        href="https://unpkg.com/@mapbox/mapbox-gl-draw@1.5.0/dist/mapbox-gl-draw.css    margin: 0;
+        href="https://unpkg.com/@mapbox/mapbox-gl-draw@1.5.0/dist/mapbox-gl-dap {
+      margin: 0;
       padding: 0;
       height: 100%;
     }
 
-    /* Hide default Draw UI */
+    /* Hide default Mapbox Draw buttons */
     .mapbox-gl-draw_ctrl-draw-btn,
     .mapbox-gl-draw_ctrl-trash {
       display: none !important;
     }
 
-    /* Clean OpenLayers-style toolbar */
+    /* Clean icon toolbar */
     .toolbox {
       position: absolute;
       top: 10px;
@@ -82,10 +83,9 @@
 
 <div id="map"></div>
 
-<!-- Clean toolbar -->
 <div class="toolbox">
-  <button id="toolSelect" title="Select">🖱️</button>
-  <button id="toolPolygon" title="Polygon">⬠</button>
+  <button id="toolSelect">🖱️</button>
+  <button id="toolPolygon">⬠</button>
   <button id="zoomIn">+</button>
   <button id="zoomOut">−</button>
 </div>
@@ -94,37 +94,30 @@
   <strong>Selected Documents</strong>
   <div id="selectionList"></div>
   <button id="clearBtn" class="action-btn">Clear all</button>
-  <button id="exportCsvBtn" class="action-btn">Export CSV</button>
-  <button id="exportJsonBtn" class="action-btn">Export JSON</button>
 </div>
 
-<!-- MapLibre JS -->
-<script src="https://unpkg.com/maplibre-gl@3.6.2e-gl.js
-
-<!-- Mapbox Draw compatibility -->
+<!-- MapLibre -->
+<script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl
+<!-- ✅ MUST come BEFORE Mapbox Draw -->
 <script>
   window.mapboxgl = maplibregl;
 </script>
 
-<!-- ✅ Mapbox Draw -->
+<!-- Mapbox Draw -->
 <script src="https://unpkg.com/@mapbox/mapbox-gl-draw@1.5.0/dist/mapbox-gl-draw.js"></script>
 
-<!-- ✅ Turf -->
+<!-- Turf -->
 <script src="https://unpkg.com/@turf/turf@6.5.0/turf.min.js"></script>
 
 <script>
-/* ================= BASEMAP (DO NOT TOUCH) ================= */
-
-const isFrench = navigator.language?.toLowerCase().startsWith("fr");
+/* ===== BASEMAP (WORKING — DO NOT CHANGE) ===== */
 
 const STYLE_EN =
   "https://www.arcgis.com/sharing/rest/content/items/800d755712e8415aab301b9d55bc2800/resources/styles/root.json";
-const STYLE_FR =
-  "https://www.arcgis.com/sharing/rest/content/items/70e9deb5019d49cc88c6543887db9db5/resources/styles/root.json";
 
 const map = new maplibregl.Map({
   container: "map",
-  style: isFrench ? STYLE_FR : STYLE_EN,
+  style: STYLE_EN,
   center: [-96, 62],
   zoom: 3,
   attributionControl: false
@@ -132,7 +125,7 @@ const map = new maplibregl.Map({
 
 map.addControl(new maplibregl.NavigationControl());
 
-/* ================= DRAW ================= */
+/* ===== DRAW ===== */
 
 const draw = new MapboxDraw({
   displayControlsDefault: false,
@@ -140,32 +133,32 @@ const draw = new MapboxDraw({
 });
 map.addControl(draw);
 
-/* ================= STRONG DRAW STYLING ================= */
+/* Strong but safe draw styling */
+map.on("style.load", () => {
+  map.setPaintProperty(
+    "gl-draw-polygon-fill-active",
+    "fill-color",
+    "#ffcc33"
+  );
+  map.setPaintProperty(
+    "gl-draw-polygon-fill-active",
+    "fill-opacity",
+    0.45
+  );
 
-map.on("load", () => {
-  map.getStyle().layers.forEach(layer => {
-
-    if (layer.id.includes("gl-draw-polygon-fill.active")) {
-      map.setPaintProperty(layer.id, "fill-color", "#ffcc33");
-      map.setPaintProperty(layer.id, "fill-opacity", 0.45);
-    }
-
-    if (layer.id.includes("gl-draw-polygon-stroke.active")) {
-      map.setPaintProperty(layer.id, "line-color", "#333333"); // casing
-      map.setPaintProperty(layer.id, "line-width", 6);
-    }
-
-    if (layer.id.includes("gl-draw-polygon-and-line-vertex.active")) {
-      map.setPaintProperty(layer.id, "circle-radius", 5);
-      map.setPaintProperty(layer.id, "circle-color", "#ff6600");
-      map.setPaintProperty(layer.id, "circle-stroke-color", "#333333");
-      map.setPaintProperty(layer.id, "circle-stroke-width", 1.5);
-    }
-  });
+  map.setPaintProperty(
+    "gl-draw-polygon-stroke-active",
+    "line-color",
+    "#000000"
+  );
+  map.setPaintProperty(
+    "gl-draw-polygon-stroke-active",
+    "line-width",
+    4
+  );
 });
 
-/* ================= TOOLBAR ================= */
-
+/* Toolbar logic */
 function setActive(btn) {
   document.querySelectorAll(".toolbox button")
     .forEach(b => b.classList.remove("active"));
@@ -187,105 +180,6 @@ zoomOut.onclick = () => map.zoomOut();
 
 draw.changeMode("simple_select");
 toolSelect.classList.add("active");
-
-/* ================= SELECTION ================= */
-
-const selectedDocs = new Set();
-const listEl = document.getElementById("selectionList");
-
-function updateList() {
-  listEl.innerHTML = "";
-  selectedDocs.forEach(id => {
-    const row = document.createElement("div");
-    row.className = "selection-item";
-    row.innerHTML = `<span>${id}</span><button>✕</button>`;
-    row.querySelector("button").onclick = () => deselect(id);
-    listEl.appendChild(row);
-  });
-}
-
-function select(id) {
-  if (selectedDocs.has(id)) return;
-  selectedDocs.add(id);
-  map.setFeatureState({ source: "bathy", id }, { selected: true });
-  updateList();
-}
-
-function deselect(id) {
-  selectedDocs.delete(id);
-  map.setFeatureState({ source: "bathy", id }, { selected: false });
-  updateList();
-}
-
-clearBtn.onclick = () => {
-  selectedDocs.forEach(id =>
-    map.setFeatureState({ source: "bathy", id }, { selected: false })
-  );
-  selectedDocs.clear();
-  updateList();
-};
-
-/* ================= DATA ================= */
-
-let cached = [];
-
-map.on("load", () => {
-  map.addSource("bathy", {
-    type: "geojson",
-    data: "https://raw.githubusercontent.com/cavanaghg-chs/bathy_map/main/data/product-results.geojson",
-    promoteId: "documentId"
-  });
-
-  map.addLayer({
-    id: "bathy-fill",
-    type: "fill",
-    source: "bathy",
-    paint: {
-      "fill-color": "#228B22",
-      "fill-opacity": [
-        "case",
-        ["boolean", ["feature-state", "selected"], false],
-        0.65,
-        0.35
-      ]
-    }
-  });
-
-  map.addLayer({
-    id: "bathy-outline",
-    type: "line",
-    source: "bathy",
-    paint: {
-      "line-color": [
-        "case",
-        ["boolean", ["feature-state", "selected"], false],
-        "#FFD700",
-        "#004d00"
-      ],
-      "line-width": 2
-    }
-  });
-
-  map.once("idle", () => {
-    cached = map.querySourceFeatures("bathy");
-  });
-
-  map.on("click", "bathy-fill", e => {
-    const id = e.features[0].id;
-    selectedDocs.has(id) ? deselect(id) : select(id);
-  });
-});
-
-/* ================= POLYGON SELECTION ================= */
-
-map.on("draw.create", e => {
-  const poly = e.features[0];
-  cached.forEach(f => {
-    if (turf.booleanIntersects(poly, f)) {
-      select(f.id);
-    }
-  });
-});
 </script>
 
 </body>
