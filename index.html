@@ -1,17 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title>OpenLayers Proof</title>
+  <meta charset="utf-8" />
+  <title>Esri Basemap – OpenLayers</title>
 
   <!-- ✅ OpenLayers CSS -->
   <link
     rel="stylesheet"
-    href="https://cdn.jsdelivr.net/npm/ol@7.5.2/ol.css"
-  >
-
-  <style>
-    html, body, #map {
+    href="https://cdn.jsdelivr.net/npm/ol@7.5.2/ol{
       margin: 0;
       padding: 0;
       height: 100%;
@@ -24,21 +20,32 @@
 <div id="map"></div>
 
 <!-- ✅ OpenLayers JS -->
-<script src="https://cdn.jsdelivr.net/npm/ol@7.5.2/dist/ol.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/ol@7.5.2/dist/ol.jsox-style adapter for OpenLayers -->
+<script src="https://cdn.jsdelivr.net/npm/ol-mapbox-style@latest/dist/olms.jscript>
+  /* ---------- Language detection ---------- */
+  const isFrench =
+    navigator.language &&
+    navigator.language.toLowerCase().startsWith("fr");
 
-<script>
+  /* ---------- Same Esri basemaps you used before ---------- */
+  const STYLE_EN =
+    "https://www.arcgis.com/sharing/rest/content/items/800d755712e8415aab301b9d55bc2800/resources/styles/root.json";
+
+  const STYLE_FR =
+    "https://www.arcgis.com/sharing/rest/content/items/70e9deb5019d49cc88c6543887db9db5/resources/styles/root.json";
+
+  /* ---------- Create OpenLayers map ---------- */
   const map = new ol.Map({
     target: "map",
-    layers: [
-      new ol.layer.Tile({
-        source: new ol.source.OSM()
-      })
-    ],
     view: new ol.View({
       center: ol.proj.fromLonLat([-96, 62]),
       zoom: 3
-    })
+    }),
+    controls: [] // no default UI
   });
+
+  /* ---------- Apply Esri basemap ---------- */
+  olms.applyStyle(map, isFrench ? STYLE_FR : STYLE_EN);
 </script>
 
 </body>
