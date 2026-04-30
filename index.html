@@ -217,7 +217,12 @@
 <!-- ✅ MapLibre JS -->
 <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
 
-<!-- ✅ Mapbox Draw JS (FIXED) -->
+<!-- ✅ REQUIRED alias for Mapbox Draw -->
+<script>
+  window.mapboxgl = maplibregl;
+</script>
+
+<!-- ✅ Mapbox Draw JS -->
 <script src="https://unpkg.com/@mapbox/mapbox-gl-draw@1.5.0/dist/mapbox-gl-draw.js"></script>
 
 <!-- ✅ Turf JS (FIXED) -->
