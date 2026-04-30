@@ -44,12 +44,55 @@
       font-size: 12px;
       cursor: pointer;
     }
+
+/* Clean OpenLayers-style toolbar */
+.toolbox {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: rgba(255,255,255,0.95);
+  padding: 6px;
+  border-radius: 6px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+  z-index: 20;
+}
+
+.toolbox button {
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 6px;
+  background: #f3f3f3;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.toolbox button:hover {
+  background: #e5e5e5;
+}
+
+.toolbox button.active {
+  background: #ffd700;
+}
+   
   </style>
 </head>
 
 <body>
 
 <div id="map"></div>
+  
+<div class="toolbox">
+  <button id="toolSelect" title="Select">🖱️</button>
+  <button id="toolPolygon" title="Polygon">⬠</button>
+  <button id="zoomIn" title="Zoom in">+</button>
+  <button id="zoomOut" title="Zoom out">−</button>
+</div>
+
 
 <div class="selection-panel">
   <strong>Selected Documents</strong>
@@ -91,6 +134,31 @@ const draw = new MapboxDraw({
   controls: { polygon: true, trash: true }
 });
 map.addControl(draw, "top-left");
+
+  
+function setActive(btn) {
+  document.querySelectorAll(".toolbox button")
+    .forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+}
+
+toolSelect.onclick = e => {
+  draw.changeMode("simple_select");
+  setActive(e.target);
+};
+
+toolPolygon.onclick = e => {
+  draw.changeMode("draw_polygon");
+  setActive(e.target);
+};
+
+zoomIn.onclick = () => map.zoomIn();
+zoomOut.onclick = () => map.zoomOut();
+
+// Default mode
+draw.changeMode("simple_select");
+toolSelect.classList.add("active");
+
 
 const selectedDocs = new Set();
 const listEl = document.getElementById("selectionList");
