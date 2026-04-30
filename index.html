@@ -311,6 +311,68 @@ map.on("load", () => {
     promoteId: "documentId"
   });
 
+  map.on("style.load", () => {
+  /* ===============================
+     ACTIVE DRAW POLYGON – FILL
+     =============================== */
+  if (map.getLayer("gl-draw-polygon-fill-active")) {
+    map.setPaintProperty(
+      "gl-draw-polygon-fill-active",
+      "fill-color",
+      "#facc15" // rich gold
+    );
+    map.setPaintProperty(
+      "gl-draw-polygon-fill-active",
+      "fill-opacity",
+      0.45
+    );
+  }
+
+  /* ===============================
+     ACTIVE DRAW POLYGON – OUTLINE (HALO)
+     =============================== */
+  if (map.getLayer("gl-draw-polygon-stroke-active")) {
+    // Dark outer casing for contrast
+    map.setPaintProperty(
+      "gl-draw-polygon-stroke-active",
+      "line-color",
+      "#111827" // near-black
+    );
+    map.setPaintProperty(
+      "gl-draw-polygon-stroke-active",
+      "line-width",
+      4
+    );
+  }
+
+  /* ===============================
+     ACTIVE DRAW VERTICES
+     =============================== */
+  if (map.getLayer("gl-draw-polygon-and-line-vertex-active")) {
+    map.setPaintProperty(
+      "gl-draw-polygon-and-line-vertex-active",
+      "circle-radius",
+      5
+    );
+    map.setPaintProperty(
+      "gl-draw-polygon-and-line-vertex-active",
+      "circle-color",
+      "#f59e0b" // amber
+    );
+    map.setPaintProperty(
+      "gl-draw-polygon-and-line-vertex-active",
+      "circle-stroke-color",
+      "#111827"
+    );
+    map.setPaintProperty(
+      "gl-draw-polygon-and-line-vertex-active",
+      "circle-stroke-width",
+      1.5
+    );
+  }
+});
+
+
   map.addLayer({
     id: "bathy-fill",
     type: "fill",
