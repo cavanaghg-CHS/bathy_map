@@ -2,19 +2,55 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>MapLibre Proof</title>
+  <title>Bathy Map</title>
 
   <!-- ✅ MapLibre CSS -->
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css"
-  >
+  https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css
+
+  <!-- ✅ Mapbox Draw CSS -->
+  https://unpkg.com/@mapbox/mapbox-gl-draw@1.5.0/dist/mapbox-gl-draw.css
 
   <style>
     html, body, #map {
       margin: 0;
       padding: 0;
       height: 100%;
+    }
+
+    /* Hide default Mapbox Draw buttons */
+    .mapbox-gl-draw_ctrl-draw-btn,
+    .mapbox-gl-draw_ctrl-trash {
+      display: none !important;
+    }
+
+    /* Clean OpenLayers-style toolbar */
+    .toolbox {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      background: rgba(255,255,255,0.95);
+      padding: 6px;
+      border-radius: 6px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+      z-index: 10;
+    }
+
+    .toolbox button {
+      width: 34px;
+      height: 34px;
+      border: none;
+      border-radius: 6px;
+      background: #f3f3f3;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .toolbox button.active {
+      background: #ffd700;
     }
   </style>
 </head>
@@ -23,16 +59,102 @@
 
 <div id="map"></div>
 
+<!-- Clean toolbar -->
+<div class="toolbox">
+  <button id="toolSelect" title="Select">🖱️</button>
+  <button id="toolPolygon" title="Polygon">⬠</button>
+  <button id="zoomIn" title="Zoom in">+</button>
+  <button id="zoomOut" title="Zoom out">−</button>
+</div>
+
 <!-- ✅ MapLibre JS -->
-<script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js
+
+<!-- ✅ REQUIRED: alias BEFORE Mapbox Draw loads -->
+<script>
+  window.mapboxgl = maplibregl;
+</script>
+
+<!-- ✅ Mapbox Draw JS -->
+https://unpkg.com/@mapbox/mapbox-gl-draw@1.5.0/dist/mapbox-gl-draw.jsscript>
 
 <script>
-  const map = new maplibregl.Map({
-    container: "map",
-    style: "https://www.arcgis.com/sharing/rest/content/items/800d755712e8415aab301b9d55bc2800/resources/styles/root.json",
-    center: [-96, 62],
-    zoom: 3
-  });
+/* ================= BASEMAP (KNOWN GOOD) ================= */
+
+const map = new maplibregl.Map({
+  container: "map",
+  style: "https://www.arcgis.com/sharing/rest/content/items/800d755712e8415aab301b9d55bc2800/resources/styles/root.json",
+  center: [-96, 62],
+  zoom: 3,
+  attributionControl: false
+});
+
+map.addControl(new maplibregl.NavigationControl());
+
+/* ================= DRAW ================= */
+
+const draw = new MapboxDraw({
+  displayControlsDefault: false,
+  controls: { polygon: true, trash: true }
+});
+map.addControl(draw);
+
+/* ================= STRONG DRAW STYLING ================= */
+/* Runs after style + draw layers exist */
+map.on("style.load", () => {
+  // Active polygon fill
+  if (map.getLayer("gl-draw-polygon-fill-active")) {
+    map.setPaintProperty(
+      "gl-draw-polygon-fill-active",
+      "fill-color",
+      "#ffcc33"
+    );
+    map.setPaintProperty(
+      "gl-draw-polygon-fill-active",
+      "fill-opacity",
+      0.45
+    );
+  }
+
+  // Active polygon outline (dark casing)
+  if (map.getLayer("gl-draw-polygon-stroke-active")) {
+    map.setPaintProperty(
+      "gl-draw-polygon-stroke-active",
+      "line-color",
+      "#333333"
+    );
+    map.setPaintProperty(
+      "gl-draw-polygon-stroke-active",
+      "line-width",
+      4
+    );
+  }
+});
+
+/* ================= TOOLBAR ================= */
+
+function setActive(btn) {
+  document.querySelectorAll(".toolbox button")
+    .forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+}
+
+document.getElementById("toolSelect").onclick = e => {
+  draw.changeMode("simple_select");
+  setActive(e.target);
+};
+
+document.getElementById("toolPolygon").onclick = e => {
+  draw.changeMode("draw_polygon");
+  setActive(e.target);
+};
+
+document.getElementById("zoomIn").onclick = () => map.zoomIn();
+document.getElementById("zoomOut").onclick = () => map.zoomOut();
+
+/* Default mode */
+draw.changeMode("simple_select");
+document.getElementById("toolSelect").classList.add("active");
 </script>
 
 </body>
