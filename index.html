@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>Bathy Map</title>
+  <meta charset="utf-8">
+  <title>Esri Basemap Test</title>
 
   <!-- OpenLayers CSS -->
   <link
@@ -11,225 +11,44 @@
   />
 
   <style>
-    html, body {
+    html, body, #map {
       margin: 0;
       height: 100%;
-    }
-
-    #map {
-      width: 100%;
-      height: 100%;
-    }
-
-    /* Professional icon-only control */
-    .toolbar {
-      position: absolute;
-      top: 12px;
-      left: 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      padding: 6px;
-      background: rgba(255,255,255,0.97);
-      border-radius: 6px;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.25);
-      z-index: 10;
-    }
-
-    .toolbar button {
-      width: 36px;
-      height: 36px;
-      border: none;
-      border-radius: 6px;
-      background: #f3f3f3;
-      cursor: pointer;
-      font-size: 16px;
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .toolbar button:hover {
-      background: #e4e4e4;
-    }
-
-    .toolbar button.active {
-      background: #ffd700;
-    }
-
-    .toolbar .sep {
-      height: 1px;
-      background: #ccc;
-      margin: 4px 0;
-      width: 100%;
     }
   </style>
 </head>
 
 <body>
-
 <div id="map"></div>
-
-<!-- Icon-only toolbar -->
-<div class="toolbar">
-  <button id="toolSelect" title="Select">🖱️</button>
-  <button id="toolPolygon" title="Polygon select">⬠</button>
-  <button id="toolLine" title="Line select">／</button>
-  <div class="sep"></div>
-  <button id="zoomIn" title="Zoom in">+</button>
-  <button id="zoomOut" title="Zoom out">−</button>
-</div>
 
 <!-- OpenLayers -->
 <script src="https://cdn.jsdelivr.net/npm/ol@latest/dist/ol.js"></script>
 
-<!-- OpenLayers Mapbox Style adapter -->
+<!-- ✅ REQUIRED: Mapbox style adapter -->
 <script src="https://cdn.jsdelivr.net/npm/ol-mapbox-style@latest/dist/olms.js"></script>
 
 <script>
-/* ---------------- Esri basemap (EN / FR) ---------------- */
+  const isFrench =
+    navigator.language &&
+    navigator.language.toLowerCase().startsWith("fr");
 
-// Browser language detection
-const isFrench = navigator.language &&
-  navigator.language.toLowerCase().startsWith("fr");
+  const STYLE_EN =
+    "https://www.arcgis.com/sharing/rest/content/items/800d755712e8415aab301b9d55bc2800/resources/styles/root.json";
 
-// Same Esri vector basemaps you used before
-const STYLE_EN =
-  "https://www.arcgis.com/sharing/rest/content/items/800d755712e8415aab301b9d55bc2800/resources/styles/root.json";
+  const STYLE_FR =
+    "https://www.arcgis.com/sharing/rest/content/items/70e9deb5019d49cc88c6543887db9db5/resources/styles/root.json";
 
-const STYLE_FR =
-  "https://www.arcgis.com/sharing/rest/content/items/70e9deb5019d49cc88c6543887db9db5/resources/styles/root.json";
-
-/* ---------------- Map ---------------- */
-
-const map = new ol.Map({
-  target: "map",
-  view: new ol.View({
-    center: ol.proj.fromLonLat([-96, 62]),
-    zoom: 3
-  }),
-  controls: [] // remove default OL controls
-});
-
-// Apply Esri vector basemap
-olms.applyStyle(map, isFrench ? STYLE_FR : STYLE_EN);
-
-/* ---------------- Bathy layer ---------------- */
-
-const bathySource = new ol.source.Vector({
-  url: "https://raw.githubusercontent.com/cavanaghg-chs/bathy_map/main/data/product-results.geojson",
-  format: new ol.format.GeoJSON()
-});
-
-const bathyLayer = new ol.layer.Vector({
-  source: bathySource,
-  style: f => new ol.style.Style({
-    fill: new ol.style.Fill({
-      color: f.get("selected")
-        ? "rgba(255,215,0,0.55)"
-        : "rgba(34,139,34,0.45)"
+  const map = new ol.Map({
+    target: "map",
+    view: new ol.View({
+      center: ol.proj.fromLonLat([-96, 62]),
+      zoom: 3
     }),
-    stroke: new ol.style.Stroke({
-      color: f.get("selected") ? "#FFD700" : "#004d00",
-      width: 2
-    })
-  })
-});
-
-map.addLayer(bathyLayer);
-
-/* Sketch layer */
-const sketchSource = new ol.source.Vector();
-map.addLayer(new ol.layer.Vector({ source: sketchSource }));
-
-/* ---------------- Interactions ---------------- */
-
-const selectInteraction = new ol.interaction.Select({
-  layers: [bathyLayer]
-});
-map.addInteraction(selectInteraction);
-
-selectInteraction.on("select", e => {
-  e.selected.forEach(f => f.set("selected", true));
-  e.deselected.forEach(f => f.set("selected", false));
-});
-
-let drawInteraction = null;
-
-function clearDraw() {
-  if (drawInteraction) {
-    map.removeInteraction(drawInteraction);
-    drawInteraction = null;
-  }
-  sketchSource.clear();
-}
-
-function activateDraw(type) {
-  clearDraw();
-
-  drawInteraction = new ol.interaction.Draw({
-    source: sketchSource,
-    type
+    controls: []
   });
 
-  drawInteraction.on("drawend", e => {
-    let geom = e.feature.getGeometry();
-
-    // Buffer line selections (meters)
-    if (type === "LineString") {
-      geom = geom.clone().buffer(5000); // 5 km
-    }
-
-    bathySource.getFeatures().forEach(f => {
-      if (geom.intersectsGeometry(f.getGeometry())) {
-        f.set("selected", true);
-      }
-    });
-
-    clearDraw();
-    setActive(toolSelect);
-  });
-
-  map.addInteraction(drawInteraction);
-}
-
-/* ---------------- Toolbar logic ---------------- */
-
-const toolSelect  = document.getElementById("toolSelect");
-const toolPolygon = document.getElementById("toolPolygon");
-const toolLine    = document.getElementById("toolLine");
-
-function setActive(btn) {
-  document.querySelectorAll(".toolbar button")
-    .forEach(b => b.classList.remove("active"));
-  btn.classList.add("active");
-}
-
-toolSelect.onclick = () => {
-  clearDraw();
-  setActive(toolSelect);
-};
-
-toolPolygon.onclick = () => {
-  activateDraw("Polygon");
-  setActive(toolPolygon);
-};
-
-toolLine.onclick = () => {
-  activateDraw("LineString");
-  setActive(toolLine);
-};
-
-document.getElementById("zoomIn").onclick =
-  () => map.getView().setZoom(map.getView().getZoom() + 1);
-
-document.getElementById("zoomOut").onclick =
-  () => map.getView().setZoom(map.getView().getZoom() - 1);
-
-// Default tool
-setActive(toolSelect);
+  // ✅ This will now work
+  olms.applyStyle(map, isFrench ? STYLE_FR : STYLE_EN);
 </script>
-
 </body>
 </html>
