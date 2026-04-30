@@ -219,9 +219,11 @@ const draw = new MapboxDraw({
   displayControlsDefault: false,
   controls: { polygon: true, trash: true },
 
-  // ✅ OVERRIDE DRAW STYLES (this is the key)
+  // ✅ Modern, sleek draw styling
   styles: [
-    // Active polygon fill
+    /* ============================
+       ACTIVE POLYGON FILL
+       ============================ */
     {
       id: "gl-draw-polygon-fill-active",
       type: "fill",
@@ -230,12 +232,31 @@ const draw = new MapboxDraw({
         ["==", "$type", "Polygon"]
       ],
       paint: {
-        "fill-color": "#facc15",      // strong gold
-        "fill-opacity": 0.45
+        "fill-color": "#facc15",   // warm gold
+        "fill-opacity": 0.18       // much lighter
       }
     },
 
-    // Active polygon outer outline (halo)
+    /* ============================
+       OUTER HALO (SUBTLE)
+       ============================ */
+    {
+      id: "gl-draw-polygon-stroke-active-halo",
+      type: "line",
+      filter: ["all",
+        ["==", "active", "true"],
+        ["==", "$type", "Polygon"]
+      ],
+      paint: {
+        "line-color": "#0f172a",   // slate / near-black
+        "line-width": 3,
+        "line-opacity": 0.45
+      }
+    },
+
+    /* ============================
+       INNER ACCENT STROKE
+       ============================ */
     {
       id: "gl-draw-polygon-stroke-active",
       type: "line",
@@ -244,12 +265,15 @@ const draw = new MapboxDraw({
         ["==", "$type", "Polygon"]
       ],
       paint: {
-        "line-color": "#111827",      // near-black
-        "line-width": 4
+        "line-color": "#f59e0b",   // amber
+        "line-width": 1.5,
+        "line-dasharray": [1.5, 1]
       }
     },
 
-    // Polygon vertices
+    /* ============================
+       VERTICES (MINIMAL)
+       ============================ */
     {
       id: "gl-draw-polygon-and-line-vertex-active",
       type: "circle",
@@ -258,14 +282,18 @@ const draw = new MapboxDraw({
         ["==", "meta", "vertex"]
       ],
       paint: {
-        "circle-radius": 5,
+        "circle-radius": 4,
         "circle-color": "#f59e0b",
-        "circle-stroke-color": "#111827",
-        "circle-stroke-width": 1.5
+        "circle-stroke-color": "#0f172a",
+        "circle-stroke-width": 1
       }
     }
   ]
 });
+
+
+
+  
 map.addControl(draw, "top-left");
 
   
