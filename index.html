@@ -2,185 +2,55 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Bathy Map</title>
+  <title>Bathy Map – Recovery</title>
 
-  <!-- MapLibre CSS -->
-  <link rel="stylesheet"
-        href="https://unpkg.com/maplibre-glapbox Draw CSS -->
-  <link rel="stylesheet"
-        href="https://unpkg.com/@mapbox/mapbox-gl-draw@1.5.0/dist/mapbox-gl-dap {
+  https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css
+  https://unpkg.com/@mapbox/mapbox-gl-draw@1.5.0/dist/mapbox-gl-draw.css
+
+  <style>
+    html, body, #map {
       margin: 0;
       padding: 0;
       height: 100%;
-    }
-
-    /* Hide default Mapbox Draw buttons */
-    .mapbox-gl-draw_ctrl-draw-btn,
-    .mapbox-gl-draw_ctrl-trash {
-      display: none !important;
-    }
-
-    /* Clean icon toolbar */
-    .toolbox {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      background: rgba(255,255,255,0.95);
-      padding: 6px;
-      border-radius: 6px;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.25);
-      z-index: 11;
-    }
-
-    .toolbox button {
-      width: 34px;
-      height: 34px;
-      border: none;
-      border-radius: 6px;
-      background: #f3f3f3;
-      cursor: pointer;
-      font-size: 16px;
-      font-weight: 600;
-    }
-
-    .toolbox button.active {
-      background: #ffd700;
-    }
-
-    /* Selection panel */
-    .selection-panel {
-      position: absolute;
-      top: 10px;
-      left: 60px;
-      width: 260px;
-      background: white;
-      padding: 10px;
-      font-size: 13px;
-      box-shadow: 0 0 15px rgba(0,0,0,0.2);
-      border-radius: 5px;
-      z-index: 10;
-    }
-
-    .selection-item {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 4px;
-    }
-
-    .action-btn {
-      width: 100%;
-      margin-top: 4px;
-      font-size: 12px;
-      cursor: pointer;
     }
   </style>
 </head>
 
 <body>
-
 <div id="map"></div>
 
-<div class="toolbox">
-  <button id="toolSelect">🖱️</button>
-  <button id="toolPolygon">⬠</button>
-  <button id="zoomIn">+</button>
-  <button id="zoomOut">−</button>
-</div>
-
-<div class="selection-panel">
-  <strong>Selected Documents</strong>
-  <div id="selectionList"></div>
-  <button id="clearBtn" class="action-btn">Clear all</button>
-</div>
-
 <!-- MapLibre -->
-<script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl
-<!-- ✅ MUST come BEFORE Mapbox Draw -->
+https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.jsscript>
+
+<!-- REQUIRED alias BEFORE Draw -->
 <script>
   window.mapboxgl = maplibregl;
 </script>
 
 <!-- Mapbox Draw -->
-<script src="https://unpkg.com/@mapbox/mapbox-gl-draw@1.5.0/dist/mapbox-gl-draw.js"></script>
+https://unpkg.com/@mapbox/mapbox-gl-draw@1.5.0/dist/mapbox-gl-draw.jsscript>
 
 <!-- Turf -->
-<script src="https://unpkg.com/@turf/turf@6.5.0/turf.min.js"></script>
+https://unpkg.com/@turf/turf@6.5.0/turf.min.js
 
 <script>
-/* ===== BASEMAP (WORKING — DO NOT CHANGE) ===== */
+  const STYLE =
+    "https://www.arcgis.com/sharing/rest/content/items/800d755712e8415aab301b9d55bc2800/resources/styles/root.json";
 
-const STYLE_EN =
-  "https://www.arcgis.com/sharing/rest/content/items/800d755712e8415aab301b9d55bc2800/resources/styles/root.json";
+  const map = new maplibregl.Map({
+    container: "map",
+    style: STYLE,
+    center: [-96, 62],
+    zoom: 3
+  });
 
-const map = new maplibregl.Map({
-  container: "map",
-  style: STYLE_EN,
-  center: [-96, 62],
-  zoom: 3,
-  attributionControl: false
-});
+  map.addControl(new maplibregl.NavigationControl());
 
-map.addControl(new maplibregl.NavigationControl());
-
-/* ===== DRAW ===== */
-
-const draw = new MapboxDraw({
-  displayControlsDefault: false,
-  controls: { polygon: true, trash: true }
-});
-map.addControl(draw);
-
-/* Strong but safe draw styling */
-map.on("style.load", () => {
-  map.setPaintProperty(
-    "gl-draw-polygon-fill-active",
-    "fill-color",
-    "#ffcc33"
-  );
-  map.setPaintProperty(
-    "gl-draw-polygon-fill-active",
-    "fill-opacity",
-    0.45
-  );
-
-  map.setPaintProperty(
-    "gl-draw-polygon-stroke-active",
-    "line-color",
-    "#000000"
-  );
-  map.setPaintProperty(
-    "gl-draw-polygon-stroke-active",
-    "line-width",
-    4
-  );
-});
-
-/* Toolbar logic */
-function setActive(btn) {
-  document.querySelectorAll(".toolbox button")
-    .forEach(b => b.classList.remove("active"));
-  btn.classList.add("active");
-}
-
-toolSelect.onclick = e => {
-  draw.changeMode("simple_select");
-  setActive(e.target);
-};
-
-toolPolygon.onclick = e => {
-  draw.changeMode("draw_polygon");
-  setActive(e.target);
-};
-
-zoomIn.onclick  = () => map.zoomIn();
-zoomOut.onclick = () => map.zoomOut();
-
-draw.changeMode("simple_select");
-toolSelect.classList.add("active");
+  const draw = new MapboxDraw({
+    displayControlsDefault: false,
+    controls: { polygon: true, trash: true }
+  });
+  map.addControl(draw);
 </script>
-
 </body>
 </html>
