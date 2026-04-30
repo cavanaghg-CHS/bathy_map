@@ -2,14 +2,25 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Bathy Map – Clean UI</title>
+  <title>Bathy Map – OpenLayers (Clean)</title>
 
-  <link href="https://cdn.jsdelivr.net/npm/ol@latest/ol.css" rel="stylesheet" />
+  <!-- OpenLayers CSS -->
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/ol@latest/ol.css" />
 
   <style>
-    html, body { margin: 0; height: 100%; }
-    #map { height: 100%; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+    }
 
+    #map {
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Minimal, quiet control */
     .toolbox {
       position: absolute;
       top: 10px;
@@ -17,8 +28,8 @@
       background: white;
       padding: 8px 10px;
       font-size: 13px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
       border-radius: 4px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
       z-index: 5;
     }
 
@@ -31,6 +42,7 @@
     .toolbox button {
       width: 100%;
       margin-top: 6px;
+      cursor: pointer;
     }
   </style>
 </head>
@@ -47,9 +59,11 @@
   <button id="clear">Clear</button>
 </div>
 
+<!-- OpenLayers JS -->
 <script src="https://cdn.jsdelivr.net/npm/ol@latest/dist/ol.js"></script>
+
 <script>
-/* ---------- Layers ---------- */
+/* ---------------- Data layers ---------------- */
 
 const bathySource = new ol.source.Vector({
   url: "https://raw.githubusercontent.com/cavanaghg-chs/bathy_map/main/data/product-results.geojson",
@@ -58,29 +72,32 @@ const bathySource = new ol.source.Vector({
 
 const bathyLayer = new ol.layer.Vector({
   source: bathySource,
-  style: f =>
+  style: feature =>
     new ol.style.Style({
       fill: new ol.style.Fill({
-        color: f.get("selected")
+        color: feature.get("selected")
           ? "rgba(255,215,0,0.5)"
           : "rgba(34,139,34,0.45)"
       }),
       stroke: new ol.style.Stroke({
-        color: f.get("selected") ? "#FFD700" : "#004d00",
+        color: feature.get("selected") ? "#FFD700" : "#004d00",
         width: 2
       })
     })
 });
 
+/* Sketch layer for drawn geometry */
 const sketchSource = new ol.source.Vector();
 const sketchLayer = new ol.layer.Vector({ source: sketchSource });
 
-/* ---------- Map ---------- */
+/* ---------------- Map ---------------- */
 
 const map = new ol.Map({
   target: "map",
   layers: [
-    new ol.layer.Tile({ source: new ol.source.OSM() }),
+    new ol.layer.Tile({
+      source: new ol.source.OSM()
+    }),
     bathyLayer,
     sketchLayer
   ],
@@ -90,8 +107,9 @@ const map = new ol.Map({
   })
 });
 
-/* ---------- Interactions ---------- */
+/* ---------------- Interactions ---------------- */
 
+/* Click selection (always available in Select mode) */
 const selectInteraction = new ol.interaction.Select({
   layers: [bathyLayer]
 });
@@ -103,10 +121,15 @@ selectInteraction.on("select", e => {
   e.deselected.forEach(f => f.set("selected", false));
 });
 
+/* Draw interaction (activated per tool) */
 let drawInteraction = null;
 
 function activateDraw(type) {
-  if (drawInteraction) map.removeInteraction(drawInteraction);
+  if (drawInteraction) {
+    map.removeInteraction(drawInteraction);
+    drawInteraction = null;
+  }
+
   sketchSource.clear();
 
   drawInteraction = new ol.interaction.Draw({
@@ -117,14 +140,15 @@ function activateDraw(type) {
   drawInteraction.on("drawend", e => {
     let geom = e.feature.getGeometry();
 
-    // Buffer line selection (5 km)
+    /* ✅ Buffer line selections (meters) */
     if (type === "LineString") {
-      geom = geom.clone().buffer(5000);
+      geom = geom.clone().buffer(5000); // 5 km buffer
     }
 
-    bathySource.getFeatures().forEach(f => {
-      if (geom.intersectsExtent(f.getGeometry().getExtent())) {
-        f.set("selected", true);
+    /* ✅ TRUE geometry intersection (not extent!) */
+    bathySource.getFeatures().forEach(feature => {
+      if (geom.intersectsGeometry(feature.getGeometry())) {
+        feature.set("selected", true);
       }
     });
 
@@ -135,19 +159,19 @@ function activateDraw(type) {
   map.addInteraction(drawInteraction);
 }
 
-/* ---------- Tool UI ---------- */
+/* ---------------- UI ---------------- */
 
-document.querySelectorAll("input[name=tool]").forEach(input => {
-  input.onchange = () => {
+document.querySelectorAll("input[name=tool]").forEach(radio => {
+  radio.addEventListener("change", () => {
     if (drawInteraction) {
       map.removeInteraction(drawInteraction);
       drawInteraction = null;
     }
     sketchSource.clear();
 
-    if (input.value === "polygon") activateDraw("Polygon");
-    if (input.value === "line") activateDraw("LineString");
-  };
+    if (radio.value === "polygon") activateDraw("Polygon");
+    if (radio.value === "line") activateDraw("LineString");
+  });
 });
 
 document.getElementById("clear").onclick = () => {
