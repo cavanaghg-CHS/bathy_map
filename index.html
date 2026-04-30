@@ -5,12 +5,16 @@
   <title>Bathy Map</title>
 
   <!-- MapLibre CSS -->
-  <link rel="stylesheet"
-        href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css">
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css"
+  />
 
   <!-- Mapbox Draw CSS -->
-  <link rel="stylesheet"
-        href="https://unpkg.com/@mapbox/mapbox-gl-draw@1.5.0/dist/mapbox-gl-draw.css">
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/@mapbox/mapbox-gl-draw@1.5.0/dist/mapbox-gl-draw.css"
+  />
 
   <style>
     html, body, #map {
@@ -19,13 +23,13 @@
       height: 100%;
     }
 
-    /* Hide Mapbox Draw default UI */
+    /* Hide Mapbox Draw default buttons */
     .mapbox-gl-draw_ctrl-draw-btn,
     .mapbox-gl-draw_ctrl-trash {
       display: none !important;
     }
 
-    /* Clean icon-only toolbox (OpenLayers-like) */
+    /* Clean icon-only toolbar */
     .toolbox {
       position: absolute;
       top: 10px;
@@ -33,7 +37,7 @@
       display: flex;
       flex-direction: column;
       gap: 6px;
-      background: rgba(255, 255, 255, 0.95);
+      background: rgba(255,255,255,0.95);
       padding: 6px;
       border-radius: 6px;
       box-shadow: 0 4px 14px rgba(0,0,0,0.25);
@@ -59,7 +63,7 @@
       background: #ffd700;
     }
 
-    /* Selection panel (unchanged) */
+    /* Selection panel */
     .selection-panel {
       position: absolute;
       top: 10px;
@@ -123,9 +127,7 @@
 <script src="https://unpkg.com/@turf/turf@6.5.0/turf.min.js"></script>
 
 <script>
-/* =========================================================
-   BASEMAP (LOCKED — DO NOT CHANGE)
-   ========================================================= */
+/* ================= BASEMAP (LOCKED) ================= */
 
 const isFrench = navigator.language?.toLowerCase().startsWith("fr");
 
@@ -144,19 +146,41 @@ const map = new maplibregl.Map({
 
 map.addControl(new maplibregl.NavigationControl());
 
-/* =========================================================
-   DRAW SETUP (UI HIDDEN)
-   ========================================================= */
+/* ================= DRAW ================= */
 
 const draw = new MapboxDraw({
   displayControlsDefault: false,
   controls: { polygon: true, trash: true }
 });
-map.addControl(draw, "top-left");
+map.addControl(draw);
 
-/* =========================================================
-   CLEAN TOOLBAR BEHAVIOR
-   ========================================================= */
+/* ================= STRONG DRAW STYLING ================= */
+
+map.on("load", () => {
+  map.getStyle().layers.forEach(layer => {
+
+    // Active polygon fill
+    if (layer.id.includes("gl-draw-polygon-fill.active")) {
+      map.setPaintProperty(layer.id, "fill-color", "#ffcc33");
+      map.setPaintProperty(layer.id, "fill-opacity", 0.45);
+    }
+
+    // Active polygon outline
+    if (layer.id.includes("gl-draw-polygon-stroke.active")) {
+      map.setPaintProperty(layer.id, "line-color", "#ff9900");
+      map.setPaintProperty(layer.id, "line-width", 3);
+      map.setPaintProperty(layer.id, "line-dasharray", [2, 1]);
+    }
+
+    // Polygon vertices
+    if (layer.id.includes("gl-draw-polygon-and-line-vertex.active")) {
+      map.setPaintProperty(layer.id, "circle-radius", 5);
+      map.setPaintProperty(layer.id, "circle-color", "#ff6600");
+    }
+  });
+});
+
+/* ================= TOOLBAR MODES ================= */
 
 function setActive(btn) {
   document.querySelectorAll(".toolbox button")
@@ -164,26 +188,23 @@ function setActive(btn) {
   btn.classList.add("active");
 }
 
-document.getElementById("toolSelect").onclick = e => {
+toolSelect.onclick = e => {
   draw.changeMode("simple_select");
   setActive(e.target);
 };
 
-document.getElementById("toolPolygon").onclick = e => {
+toolPolygon.onclick = e => {
   draw.changeMode("draw_polygon");
   setActive(e.target);
 };
 
-document.getElementById("zoomIn").onclick = () => map.zoomIn();
-document.getElementById("zoomOut").onclick = () => map.zoomOut();
+zoomIn.onclick = () => map.zoomIn();
+zoomOut.onclick = () => map.zoomOut();
 
-/* Default mode */
 draw.changeMode("simple_select");
-document.getElementById("toolSelect").classList.add("active");
+toolSelect.classList.add("active");
 
-/* =========================================================
-   SELECTION STATE
-   ========================================================= */
+/* ================= SELECTION STATE ================= */
 
 const selectedDocs = new Set();
 const listEl = document.getElementById("selectionList");
@@ -212,7 +233,7 @@ function deselect(id) {
   updateList();
 }
 
-document.getElementById("clearBtn").onclick = () => {
+clearBtn.onclick = () => {
   selectedDocs.forEach(id =>
     map.setFeatureState({ source: "bathy", id }, { selected: false })
   );
@@ -220,14 +241,11 @@ document.getElementById("clearBtn").onclick = () => {
   updateList();
 };
 
-document.getElementById("exportCsvBtn").onclick = () => {
-  download(Array.from(selectedDocs).join("\n"), "selected_documents.csv");
-};
+exportCsvBtn.onclick = () =>
+  download([...selectedDocs].join("\n"), "selected_documents.csv");
 
-document.getElementById("exportJsonBtn").onclick = () => {
-  download(JSON.stringify([...selectedDocs], null, 2),
-           "selected_documents.json");
-};
+exportJsonBtn.onclick = () =>
+  download(JSON.stringify([...selectedDocs], null, 2), "selected_documents.json");
 
 function download(content, name) {
   const blob = new Blob([content]);
@@ -238,9 +256,7 @@ function download(content, name) {
   URL.revokeObjectURL(a.href);
 }
 
-/* =========================================================
-   DATA & INTERACTIONS
-   ========================================================= */
+/* ================= DATA ================= */
 
 let cached = [];
 
@@ -257,7 +273,12 @@ map.on("load", () => {
     source: "bathy",
     paint: {
       "fill-color": "#228B22",
-      "fill-opacity": 0.45
+      "fill-opacity": [
+        "case",
+        ["boolean", ["feature-state", "selected"], false],
+        0.65,
+        0.35
+      ]
     }
   });
 
@@ -286,7 +307,8 @@ map.on("load", () => {
   });
 });
 
-/* Polygon spatial selection */
+/* ================= POLYGON SELECTION ================= */
+
 map.on("draw.create", e => {
   const poly = e.features[0];
   cached.forEach(f => {
