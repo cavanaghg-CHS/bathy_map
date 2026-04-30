@@ -2,18 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>MapLibre – Verified Basemap</title>
+  <title>Bathy Map</title>
 
   <!-- ✅ MapLibre CSS -->
   <link
     rel="stylesheet"
     href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css"
-  />
-
-  <!-- ✅ Mapbox Draw CSS -->
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/@mapbox/mapbox-gl-draw@1.5.0/dist/mapbox-gl-draw.css"
   />
 
   <style>
@@ -32,30 +26,54 @@
 <!-- ✅ MapLibre JS -->
 <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
 
-<!-- ✅ REQUIRED: alias BEFORE Mapbox Draw -->
 <script>
-  window.mapboxgl = maplibregl;
-</script>
+/* =====================================================
+   BASEMAP (KNOWN WORKING – DO NOT CHANGE)
+   ===================================================== */
 
-<!-- ✅ Mapbox Draw JS -->
-<script src="https://unpkg.com/@mapbox/mapbox-gl-draw@1.5.0/dist/mapbox-gl-draw.js"></script>
+const map = new maplibregl.Map({
+  container: "map",
+  style: "https://www.arcgis.com/sharing/rest/content/items/800d755712e8415aab301b9d55bc2800/resources/styles/root.json",
+  center: [-96, 62],
+  zoom: 3,
+  attributionControl: false
+});
 
-<script>
-  const map = new maplibregl.Map({
-    container: "map",
-    style: "https://www.arcgis.com/sharing/rest/content/items/800d755712e8415aab301b9d55bc2800/resources/styles/root.json",
-    center: [-96, 62],
-    zoom: 3
+map.addControl(new maplibregl.NavigationControl());
+
+/* =====================================================
+   BATHY POLYGONS (DISPLAY ONLY)
+   ===================================================== */
+
+map.on("load", () => {
+  map.addSource("bathy", {
+    type: "geojson",
+    data: "https://raw.githubusercontent.com/cavanaghg-chs/bathy_map/main/data/product-results.geojson",
+    promoteId: "documentId"
   });
 
-  map.addControl(new maplibregl.NavigationControl());
-
-  const draw = new MapboxDraw({
-    displayControlsDefault: false,
-    controls: { polygon: true, trash: true }
+  map.addLayer({
+    id: "bathy-fill",
+    type: "fill",
+    source: "bathy",
+    paint: {
+      "fill-color": "#228B22",
+      "fill-opacity": 0.4
+    }
   });
-  map.addControl(draw);
+
+  map.addLayer({
+    id: "bathy-outline",
+    type: "line",
+    source: "bathy",
+    paint: {
+      "line-color": "#004d00",
+      "line-width": 1.5
+    }
+  });
+});
 </script>
 
 </body>
 </html>
+``
