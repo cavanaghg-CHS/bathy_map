@@ -2,56 +2,35 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Bathy Map – OpenLayers</title>
+  <title>Bathy Map – Clean UI</title>
 
-  <!-- OpenLayers CSS -->
-  <link
-    rel="stylesheet"
-    href="https://cdn.jsdelivr.net/npm/ol@latest/ol.css"
-  />
+  <link href="https://cdn.jsdelivr.net/npm/ol@latest/ol.css" rel="stylesheet" />
 
   <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-    }
+    html, body { margin: 0; height: 100%; }
+    #map { height: 100%; }
 
-    #map {
-      width: 100%;
-      height: 100%;
-    }
-
-    .panel {
+    .toolbox {
       position: absolute;
       top: 10px;
       left: 10px;
-      width: 260px;
       background: white;
-      padding: 10px;
+      padding: 8px 10px;
       font-size: 13px;
-      box-shadow: 0 0 15px rgba(0,0,0,0.2);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
       border-radius: 4px;
-      z-index: 10;
+      z-index: 5;
     }
 
-    .panel button {
-      width: 100%;
-      margin-top: 4px;
+    .toolbox label {
+      display: block;
       cursor: pointer;
-    }
-
-    .item {
-      display: flex;
-      justify-content: space-between;
       margin-bottom: 4px;
     }
 
-    .item button {
-      border: none;
-      background: none;
-      color: red;
-      cursor: pointer;
+    .toolbox button {
+      width: 100%;
+      margin-top: 6px;
     }
   </style>
 </head>
@@ -60,19 +39,17 @@
 
 <div id="map"></div>
 
-<div class="panel">
-  <strong>Selected Documents</strong>
-  <div id="selectionList"></div>
-  <button id="drawPolyBtn">Draw Polygon</button>
-  <button id="drawLineBtn">Draw Line</button>
-  <button id="clearBtn">Clear All</button>
+<div class="toolbox">
+  <strong>Tool</strong>
+  <label><input type="radio" name="tool" value="select" checked> Select</label>
+  <label><input type="radio" name="tool" value="polygon"> Polygon</label>
+  <label><input type="radio" name="tool" value="line"> Line</label>
+  <button id="clear">Clear</button>
 </div>
 
-<!-- OpenLayers JS -->
 <script src="https://cdn.jsdelivr.net/npm/ol@latest/dist/ol.js"></script>
-
 <script>
-/* ---------------- Map ---------------- */
+/* ---------- Layers ---------- */
 
 const bathySource = new ol.source.Vector({
   url: "https://raw.githubusercontent.com/cavanaghg-chs/bathy_map/main/data/product-results.geojson",
@@ -81,27 +58,31 @@ const bathySource = new ol.source.Vector({
 
 const bathyLayer = new ol.layer.Vector({
   source: bathySource,
-  style: feature => {
-    const selected = feature.get("selected");
-    return new ol.style.Style({
+  style: f =>
+    new ol.style.Style({
       fill: new ol.style.Fill({
-        color: selected ? "rgba(255,215,0,0.5)" : "rgba(34,139,34,0.45)"
+        color: f.get("selected")
+          ? "rgba(255,215,0,0.5)"
+          : "rgba(34,139,34,0.45)"
       }),
       stroke: new ol.style.Stroke({
-        color: selected ? "#FFD700" : "#004d00",
+        color: f.get("selected") ? "#FFD700" : "#004d00",
         width: 2
       })
-    });
-  }
+    })
 });
+
+const sketchSource = new ol.source.Vector();
+const sketchLayer = new ol.layer.Vector({ source: sketchSource });
+
+/* ---------- Map ---------- */
 
 const map = new ol.Map({
   target: "map",
   layers: [
-    new ol.layer.Tile({
-      source: new ol.source.OSM()
-    }),
-    bathyLayer
+    new ol.layer.Tile({ source: new ol.source.OSM() }),
+    bathyLayer,
+    sketchLayer
   ],
   view: new ol.View({
     center: ol.proj.fromLonLat([-96, 62]),
@@ -109,62 +90,20 @@ const map = new ol.Map({
   })
 });
 
-/* ---------------- Selection ---------------- */
+/* ---------- Interactions ---------- */
 
-const selectedIds = new Set();
-const selectionList = document.getElementById("selectionList");
-
-function updateList() {
-  selectionList.innerHTML = "";
-  selectedIds.forEach(id => {
-    const div = document.createElement("div");
-    div.className = "item";
-    div.innerHTML = `<span>${id}</span><button>✕</button>`;
-    div.querySelector("button").onclick = () => deselect(id);
-    selectionList.appendChild(div);
-  });
-}
-
-function select(feature) {
-  const id = feature.get("documentId");
-  if (!id) return;
-  selectedIds.add(id);
-  feature.set("selected", true);
-  updateList();
-}
-
-function deselect(id) {
-  selectedIds.delete(id);
-  bathySource.getFeatures().forEach(f => {
-    if (f.get("documentId") === id) {
-      f.set("selected", false);
-    }
-  });
-  updateList();
-}
-
-document.getElementById("clearBtn").onclick = () => {
-  selectedIds.clear();
-  bathySource.getFeatures().forEach(f => f.set("selected", false));
-  updateList();
-};
-
-/* Click select */
-map.on("singleclick", e => {
-  map.forEachFeatureAtPixel(e.pixel, feature => {
-    if (selectedIds.has(feature.get("documentId"))) {
-      deselect(feature.get("documentId"));
-    } else {
-      select(feature);
-    }
-  });
+const selectInteraction = new ol.interaction.Select({
+  layers: [bathyLayer]
 });
 
-/* ---------------- Drawing ---------------- */
+map.addInteraction(selectInteraction);
+
+selectInteraction.on("select", e => {
+  e.selected.forEach(f => f.set("selected", true));
+  e.deselected.forEach(f => f.set("selected", false));
+});
 
 let drawInteraction = null;
-const sketchSource = new ol.source.Vector();
-map.addLayer(new ol.layer.Vector({ source: sketchSource }));
 
 function activateDraw(type) {
   if (drawInteraction) map.removeInteraction(drawInteraction);
@@ -176,26 +115,46 @@ function activateDraw(type) {
   });
 
   drawInteraction.on("drawend", e => {
-    const geom = e.feature.getGeometry();
-    const testGeom =
-      type === "LineString"
-        ? geom.clone().buffer(5000) // 5 km buffer
-        : geom;
+    let geom = e.feature.getGeometry();
+
+    // Buffer line selection (5 km)
+    if (type === "LineString") {
+      geom = geom.clone().buffer(5000);
+    }
 
     bathySource.getFeatures().forEach(f => {
-      if (testGeom.intersectsExtent(f.getGeometry().getExtent())) {
-        select(f);
+      if (geom.intersectsExtent(f.getGeometry().getExtent())) {
+        f.set("selected", true);
       }
     });
 
     map.removeInteraction(drawInteraction);
+    drawInteraction = null;
   });
 
   map.addInteraction(drawInteraction);
 }
 
-document.getElementById("drawPolyBtn").onclick = () => activateDraw("Polygon");
-document.getElementById("drawLineBtn").onclick = () => activateDraw("LineString");
+/* ---------- Tool UI ---------- */
+
+document.querySelectorAll("input[name=tool]").forEach(input => {
+  input.onchange = () => {
+    if (drawInteraction) {
+      map.removeInteraction(drawInteraction);
+      drawInteraction = null;
+    }
+    sketchSource.clear();
+
+    if (input.value === "polygon") activateDraw("Polygon");
+    if (input.value === "line") activateDraw("LineString");
+  };
+});
+
+document.getElementById("clear").onclick = () => {
+  selectInteraction.getFeatures().clear();
+  bathySource.getFeatures().forEach(f => f.set("selected", false));
+  sketchSource.clear();
+};
 </script>
 
 </body>
