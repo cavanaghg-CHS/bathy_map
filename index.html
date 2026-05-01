@@ -198,17 +198,29 @@
 
 
 <div class="selection-panel">
-  <strong id="panelTitle"></strong>
+<strong id="panelTitle"></strong>
 
-  <!-- Year filter -->
-  <label for="yearFilter" style="font-size:12px; font-weight:500;">
-    Year
-  </label>
-  <select id="yearFilter" style="width:100%; margin-bottom:8px;">
-    <option value="all">All years</option>
-  </select>
+<!-- Year range filter -->
+<div style="margin-bottom:10px;">
+  <div style="display:flex; justify-content:space-between; font-size:11px; opacity:0.8;">
+    <span id="yearMinLabel"></span>
+    <span id="yearMaxLabel"></span>
+  </div>
 
-  <div id="selectionList"></div>
+  <input
+    id="yearMin"
+    type="range"
+    style="width:100%; margin-top:4px;"
+  />
+
+  <input
+    id="yearMax"
+    type="range"
+    style="width:100%; margin-top:2px;"
+  />
+</div>
+
+<div id="selectionList"></div>
 
   <button id="clearBtn" class="action-btn">Clear all</button>
   <button id="exportCsvBtn" class="action-btn">Export CSV</button>
@@ -538,7 +550,36 @@ function formatDate(value) {
   ).format(d);
 }
 
+function applyYearFilter(minYear, maxYear) {
+  const filter = [
+    "all",
+    [">=", ["to-number", ["slice", ["get", "SUREND"], 0, 4]], minYear],
+    ["<=", ["to-number", ["slice", ["get", "SUREND"], 0, 4]], maxYear]
+  ];
 
+  map.setFilter("bathy-fill", filter);
+  map.setFilter("bathy-outline", filter);
+}
+const minInput = document.getElementById("yearMin");
+const maxInput = document.getElementById("yearMax");
+
+function updateYearRange() {
+  let min = Number(minInput.value);
+  let max = Number(maxInput.value);
+
+  // Prevent crossing handles
+  if (min > max) {
+    [min, max] = [max, min];
+  }
+
+  document.getElementById("yearMinLabel").textContent = min;
+  document.getElementById("yearMaxLabel").textContent = max;
+
+  applyYearFilter(min, max);
+}
+
+minInput.addEventListener("input", updateYearRange);
+maxInput.addEventListener("input", updateYearRange);
 map.on("load", () => {
 map.addSource("bathy", {
   type: "geojson",
@@ -580,23 +621,31 @@ map.addLayer({
 map.once("idle", () => {
   cached = map.querySourceFeatures("bathy");
 
-  // Populate year filter
-  const years = new Set();
+  const years = cached
+    .map(f => f.properties?.SUREND?.slice(0, 4))
+    .filter(y => /^\d{4}$/.test(y))
+    .map(Number);
 
-  cached.forEach(f => {
-    const v = f.properties?.SUREND;
-    if (typeof v === "string" && v.length >= 4) {
-      years.add(v.slice(0, 4));
-    }
-  });
+  if (!years.length) return;
 
-  const select = document.getElementById("yearFilter");
-  [...years].sort().forEach(y => {
-    const opt = document.createElement("option");
-    opt.value = y;
-    opt.textContent = y;
-    select.appendChild(opt);
-  });
+  const minYear = Math.min(...years);
+  const maxYear = Math.max(...years);
+
+  const minInput = document.getElementById("yearMin");
+  const maxInput = document.getElementById("yearMax");
+
+  minInput.min = minYear;
+  minInput.max = maxYear;
+  minInput.value = minYear;
+
+  maxInput.min = minYear;
+  maxInput.max = maxYear;
+  maxInput.value = maxYear;
+
+  document.getElementById("yearMinLabel").textContent = minYear;
+  document.getElementById("yearMaxLabel").textContent = maxYear;
+
+  applyYearFilter(minYear, maxYear);
 });
 
 document.getElementById("yearFilter").addEventListener("change", e => {
