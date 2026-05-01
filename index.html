@@ -572,8 +572,9 @@ function formatDate(value) {
   ).format(d);
 }
 
-  function applyYearFilter(minYear, maxYear) {
-  const",  const filter = [
+function applyYearFilter(minYear, maxYear) {
+  const filter = [
+    "all",
     [">=", ["to-number", ["slice", ["get", "SUREND"], 0, 4]], minYear],
     ["<=", ["to-number", ["slice", ["get", "SUREND"], 0, 4]], maxYear]
   ];
