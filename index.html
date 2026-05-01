@@ -512,13 +512,84 @@ function download(blob, name) {
 let cached = [];
 
 map.on("load", () => {
-  map.addSource("bathy", {
-    type: "geojson",
-    data: "https://raw.githubusercontent.com/cavanaghg-chs/bathy_map/main/data/product-results.geojson",
-    promoteId: "documentId"
-  });
+map.addSource("bathy", {
+  type: "geojson",
+  data: "https://raw.githubusercontent.com/cavanaghg-chs/bathy_map/main/data/product-results.geojson",
+  promoteId: "SORID"
+});
 
+map.addLayer({
+  id: "bathy-fill",
+  type: "fill",
+  source: "bathy",
+  paint: {
+    "fill-color": "#228B22",
+    "fill-opacity": [
+      "case",
+      ["boolean", ["feature-state", "hover"], false], 0.6,
+      0.45
+    ]
+  }
+});
 
+map.addLayer({
+  id: "bathy-outline",
+  type: "line",
+  source: "bathy",
+  paint: {
+    "line-color": [
+      "case",
+      ["boolean", ["feature-state", "selected"], false], "#FFD700",
+      ["boolean", ["feature-state", "hover"], false], "#2563EB",
+      "#004d00"
+    ],
+    "line-width": [
+      "case",
+      ["boolean", ["feature-state", "hover"], false], 3,
+      2
+    ]
+  }
+});
+
+map.once("idle", () => {
+  cached = map.querySourceFeatures("bathy");
+});
+
+map.on("click", "bathy-fill", e => {
+  select(e.features[0].id); // id === SORID
+});
+
+let hoveredId = null;
+
+map.on("mousemove", "bathy-fill", e => {
+  const id = e.features[0].id;
+
+  if (hoveredId !== null && hoveredId !== id) {
+    map.setFeatureState({ source: "bathy", id: hoveredId }, { hover: false });
+  }
+
+  hoveredId = id;
+
+  map.setFeatureState({ source: "bathy", id }, { hover: true });
+
+  map.getCanvas().style.cursor = "pointer";
+
+  hoverPopup
+    .setLngLat(e.lngLat)
+    .setHTML(`<strong>SORID:</strong> ${id}`)
+    .addTo(map);
+});
+
+map.on("mouseleave", "bathy-fill", () => {
+  if (hoveredId !== null) {
+    map.setFeatureState({ source: "bathy", id: hoveredId }, { hover: false });
+  }
+  hoveredId = null;
+  map.getCanvas().style.cursor = "";
+  hoverPopup.remove();
+});
+
+  
 map.addLayer({
   id: "bathy-fill",
   type: "fill",
@@ -526,12 +597,7 @@ map.addLayer({
   paint: { "fill-color": "#228B22", "fill-opacity": 0.45 }
 });
 
-// OPTIONAL: brighten fill on hover
-map.setPaintProperty("bathy-fill", "fill-opacity", [
-  "case",
-  ["boolean", ["feature-state", "hover"], false], 0.6,
-  0.45
-]);
+
 
 
   map.addLayer({
@@ -588,36 +654,40 @@ map.on("mouseleave", "bathy-fill", () => {
   }
   hoveredId = null;
 });
-  // ---- Show document ID on hover ----
-map.on("mousemove", "bathy-fill", e => {
-  map.getCanvas().style.cursor = "pointer";
-
-  const feature = e.features[0];
-  const id = feature.id; // documentId via promoteId
-
-  hoverPopup
-    .setLngLat(e.lngLat)
-    .setHTML(`<strong>ID:</strong> ${id}`)
-    .addTo(map);
-});
-
-map.on("mouseleave", "bathy-fill", () => {
-  map.getCanvas().style.cursor = "";
-  hoverPopup.remove();
-});
+ 
 
 });
 
 map.on("draw.create", e => {
-  const feature = e.features[0];
+  const drawn = e.features[0];
 
-  // Existing polygon selection
-  if (feature.geometry.type === "Polygon") {
-    cached.forEach(f => {
-      if (turf.booleanIntersects(feature, f)) {
+  const isValid = f =>
+    f.geometry &&
+    f.geometry.coordinates &&
+    f.geometry.coordinates.length > 0;
+
+  if (drawn.geometry.type === "Polygon") {
+    cached.filter(isValid).forEach(f => {
+      if (turf.booleanIntersects(drawn, f)) {
+        select(f.id); // SORID
+      }
+    });
+  }
+
+  if (drawn.geometry.type === "LineString") {
+    const buffered = turf.buffer(drawn, 0.5, { units: "kilometers" });
+
+    cached.filter(isValid).forEach(f => {
+      if (turf.booleanIntersects(buffered, f)) {
         select(f.id);
       }
     });
+  }
+});
+
+  // Existing polygon selection
+  if (feature.geometry.type === "Polygon") {
+
   }
 
   // ✅ NEW: line-based selection
