@@ -511,11 +511,12 @@ function download(blob, name) {
 
 let cached = [];
 
-map.addSource("bathy", {
-  type: "geojson",
-  data: "https://raw.githubusercontent.com/cavanaghg-chs/bathy_map/main/data/test3.geojson",
-  promoteId: "SORID"
-});
+map.on("load", () => {
+  map.addSource("bathy", {
+    type: "geojson",
+    data: "https://raw.githubusercontent.com/cavanaghg-chs/bathy_map/main/data/product-results.geojson",
+    promoteId: "documentId"
+  });
 
 
 map.addLayer({
@@ -611,18 +612,12 @@ map.on("draw.create", e => {
   const feature = e.features[0];
 
   // Existing polygon selection
- cached.forEach(f => {
-  // Skip empty or invalid geometries
-  if (
-    !f.geometry ||
-    !f.geometry.coordinates ||
-    f.geometry.coordinates.length === 0
-  ) return;
-
-  if (turf.booleanIntersects(feature, f)) {
-    select(f.id);
-  }
-});
+  if (feature.geometry.type === "Polygon") {
+    cached.forEach(f => {
+      if (turf.booleanIntersects(feature, f)) {
+        select(f.id);
+      }
+    });
   }
 
   // ✅ NEW: line-based selection
@@ -630,17 +625,10 @@ map.on("draw.create", e => {
     const buffered = turf.buffer(feature, 0.5, { units: "kilometers" });
 
     cached.forEach(f => {
-  // Skip empty or invalid geometries
-  if (
-    !f.geometry ||
-    !f.geometry.coordinates ||
-    f.geometry.coordinates.length === 0
-  ) return;
-
-  if (turf.booleanIntersects(buffered, f)) {
-    select(f.id);
-  }
-});
+      if (turf.booleanIntersects(buffered, f)) {
+        select(f.id);
+      }
+    });
   }
 
 });
