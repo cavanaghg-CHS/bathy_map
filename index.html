@@ -199,7 +199,17 @@
 
 <div class="selection-panel">
   <strong id="panelTitle"></strong>
+
+  <!-- Year filter -->
+  <label for="yearFilter" style="font-size:12px; font-weight:500;">
+    Year
+  </label>
+  <select id="yearFilter" style="width:100%; margin-bottom:8px;">
+    <option value="all">All years</option>
+  </select>
+
   <div id="selectionList"></div>
+
   <button id="clearBtn" class="action-btn">Clear all</button>
   <button id="exportCsvBtn" class="action-btn">Export CSV</button>
   <button id="exportJsonBtn" class="action-btn">Export JSON</button>
@@ -569,7 +579,39 @@ map.addLayer({
 });
 map.once("idle", () => {
   cached = map.querySourceFeatures("bathy");
+
+  // Populate year filter
+  const years = new Set();
+
+  cached.forEach(f => {
+    const v = f.properties?.SUREND;
+    if (typeof v === "string" && v.length >= 4) {
+      years.add(v.slice(0, 4));
+    }
+  });
+
+  const select = document.getElementById("yearFilter");
+  [...years].sort().forEach(y => {
+    const opt = document.createElement("option");
+    opt.value = y;
+    opt.textContent = y;
+    select.appendChild(opt);
+  });
 });
+
+document.getElementById("yearFilter").addEventListener("change", e => {
+  const year = e.target.value;
+
+  // Expression extracts year from SUREND (YYYYMMDD → YYYY)
+  const filter =
+    year === "all"
+      ? null
+      : ["==", ["slice", ["get", "SUREND"], 0, 4], year];
+
+  map.setFilter("bathy-fill", filter);
+  map.setFilter("bathy-outline", filter);
+});
+``  
 
 map.on("click", "bathy-fill", e => {
   if (isDrawing) return;
