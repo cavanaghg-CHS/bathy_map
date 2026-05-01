@@ -620,9 +620,13 @@ map.on("draw.create", e => {
     });
   }
 
-  // ✅ UX polish
-  draw.deleteAll();
-  draw.changeMode("simple_select");
+// ✅ UX polish
+draw.deleteAll();
+draw.changeMode("simple_select");
+
+// ✅ Sync toolbar state
+setActive(toolSelect);
+
 });
   
 </script>
