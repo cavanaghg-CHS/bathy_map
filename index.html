@@ -426,7 +426,7 @@ zoomOut.onclick = () => map.zoomOut();
 
 // Default mode
 draw.changeMode("simple_select");
-toolSelect.classList.add("active");
+setActive(toolSelect);
 
 
 const selectedDocs = new Set();
@@ -551,6 +551,11 @@ let hoveredId = null;
 map.on("draw.modechange", e => {
   isDrawing = e.mode !== "simple_select";
 
+  // ✅ Sync toolbar state to mode
+  if (e.mode === "simple_select") setActive(toolSelect);
+  if (e.mode === "draw_polygon") setActive(toolPolygon);
+  if (e.mode === "draw_line_string") setActive(toolLine);
+
   // ✅ Clear hover immediately when drawing starts
   if (isDrawing && hoveredId !== null) {
     map.setFeatureState(
@@ -624,8 +629,7 @@ map.on("draw.create", e => {
 draw.deleteAll();
 draw.changeMode("simple_select");
 
-// ✅ Sync toolbar state
-setActive(toolSelect);
+
 
 });
   
