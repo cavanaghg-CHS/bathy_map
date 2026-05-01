@@ -442,6 +442,12 @@ toolSelect.classList.add("active");
 
 
 const selectedDocs = new Set();
+  // ---- Hover popup for document ID ----
+const hoverPopup = new maplibregl.Popup({
+  closeButton: false,
+  closeOnClick: false,
+  offset: 8
+});
   // ---- UI text (language-dependent) ----
 document.getElementById("panelTitle").textContent = UI.selectedDocuments;
 
@@ -539,6 +545,24 @@ map.on("load", () => {
   });
 
   map.on("click", "bathy-fill", e => select(e.features[0].id));
+  // ---- Show document ID on hover ----
+map.on("mousemove", "bathy-fill", e => {
+  map.getCanvas().style.cursor = "pointer";
+
+  const feature = e.features[0];
+  const id = feature.id; // documentId via promoteId
+
+  hoverPopup
+    .setLngLat(e.lngLat)
+    .setHTML(`<strong>ID:</strong> ${id}`)
+    .addTo(map);
+});
+
+map.on("mouseleave", "bathy-fill", () => {
+  map.getCanvas().style.cursor = "";
+  hoverPopup.remove();
+});
+
 });
 
 map.on("draw.create", e => {
