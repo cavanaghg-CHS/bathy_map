@@ -41,53 +41,7 @@
   z-index: 10;
 }
 
-.year-range {
-  margin-top: 8px;
-  padding-top: 8px;
-  border-top: 1px solid rgba(0,0,0,0.15);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-}
 
-.year-slider {
-  position: relative;
-  height: 140px;
-  width: 24px;
-}
-
-.year-slider input[type="range"] {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 140px;
-  height: 24px;
-  transform: rotate(-90deg) translateX(-58px);
-  transform-origin: center;
-  background: transparent;
-  pointer-events: none;
-  -webkit-appearance: none;
-}
-
-.year-slider input::-webkit-slider-thumb {
-  pointer-events: auto;
-  -webkit-appearance: none;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: #2563EB;
-  border: 2px solid #fff;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.4);
-}
-
-#yearMinLabel,
-#yearMaxLabel {
-  font-size: 11px;
-  font-weight: 500;
-  opacity: 0.8;
-  user-select: none;
-}
 .action-btn {
   width: 100%;
   margin-top: 6px;
@@ -222,24 +176,24 @@
 <div id="map"></div>
   
 <div class="toolbox">
+  
+<button id="toolSelect" title="Select" class="tool-btn">
+  <svg
+    width="16"
+    height="16"
+    viewBox="0 0 16 16"
+    xmlns="http://www.w3.org/2000/svg"
+    aria-hidden="true">
+    <path
+      d="M2 1 L2 14 L5 11 L7 15 L9 14 L7 10 L11 10 Z"
+      fill="#0f172a"/>
+  </svg>
+</button>
 
-  <button id="toolSelect" title="Select" class="tool-btn">…</button>
   <button id="toolPolygon" title="Polygon">⬠</button>
   <button id="toolLine" title="Line select">／</button>
   <button id="zoomIn" title="Zoom in">+</button>
   <button id="zoomOut" title="Zoom out">−</button>
-
-<!-- Year range filter -->
-<div class="year-range">
-  <div id="yearMinLabel">—</div>
-
-  <div class="year-slider">
-    <input id="yearMin" type="range" />
-    <input id="yearMax" type="range" />
-  </div>
-
-  <div id="yearMaxLabel">—</div>
-</div>
 </div>
 
 
@@ -279,6 +233,7 @@ const UI = isFrench
       select: "Sélectionner",
       polygon: "Sélection par polygone",
       line: "Sélection par ligne",
+      delete: "Supprimer la géométrie",
       zoomIn: "Zoom avant",
       zoomOut: "Zoom arrière",
 
@@ -297,6 +252,7 @@ const UI = isFrench
       select: "Select",
       polygon: "Polygon select",
       line: "Line select",
+      delete: "Delete geometry",
       zoomIn: "Zoom in",
       zoomOut: "Zoom out",
 
@@ -572,44 +528,6 @@ function formatDate(value) {
   ).format(d);
 }
 
-function applyYearFilter(minYear, maxYear) {
-  const filter = [
-    "all",
-    [">=", ["to-number", ["slice", ["get", "SUREND"], 0, 4]], minYear],
-    ["<=", ["to-number", ["slice", ["get", "SUREND"], 0, 4]], maxYear]
-  ];
-
-  map.setFilter("bathy-fill", filter);
-  map.setFilter("bathy-outline", filter);
-}
-
-const yearMin = document.getElementById("yearMin");
-const yearMax = document.getElementById("yearMax");
-
-function updateYearRange(e) {
-  let min = Number(yearMin.value);
-  let max = Number(yearMax.value);
-
-  // prevent crossing
-  if (min > max) {
-    if (e.target === yearMin) {
-      yearMin.value = max;
-      min = max;
-    } else {
-      yearMax.value = min;
-      max = min;
-    }
-  }
-
-  document.getElementById("yearMinLabel").textContent = min;
-  document.getElementById("yearMaxLabel").textContent = max;
-
-  applyYearFilter(min, max);
-}
-
-yearMin.addEventListener("input", updateYearRange);
-yearMax.addEventListener("input", updateYearRange);
-
 
 map.on("load", () => {
 map.addSource("bathy", {
@@ -651,29 +569,6 @@ map.addLayer({
 });
 map.once("idle", () => {
   cached = map.querySourceFeatures("bathy");
-
-  const years = cached
-    .map(f => f.properties?.SUREND?.slice(0, 4))
-    .filter(y => /^\d{4}$/.test(y))
-    .map(Number);
-
-  if (!years.length) return;
-
-  const minYear = Math.min(...years);
-  const maxYear = Math.max(...years);
-
-  yearMin.min = minYear;
-  yearMin.max = maxYear;
-  yearMin.value = minYear;
-
-  yearMax.min = minYear;
-  yearMax.max = maxYear;
-  yearMax.value = maxYear;
-
-  document.getElementById("yearMinLabel").textContent = minYear;
-  document.getElementById("yearMaxLabel").textContent = maxYear;
-
-  applyYearFilter(minYear, maxYear);
 });
 
 map.on("click", "bathy-fill", e => {
