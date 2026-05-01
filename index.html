@@ -502,16 +502,32 @@ let cached = [];
 function formatDate(value) {
   if (!value) return "—";
 
-  const d = new Date(value);
+  let d = null;
+
+  // Case 1: YYYYMMDD (e.g. 20190315)
+  if (typeof value === "string" && /^\d{8}$/.test(value)) {
+    const yyyy = value.slice(0, 4);
+    const mm = value.slice(4, 6);
+    const dd = value.slice(6, 8);
+    d = new Date(`${yyyy}-${mm}-${dd}`);
+  }
+  // Case 2: ISO or ISO-like string
+  else {
+    d = new Date(value);
+  }
+
   if (isNaN(d)) return "—";
 
-  const formatter = new Intl.DateTimeFormat(
+  return new Intl.DateTimeFormat(
     isFrench ? "fr-CA" : "en-CA",
     {
       day: "numeric",
       month: "long",
       year: "numeric"
     }
+  ).format(d);
+}
+``
   );
 
   return formatter.format(d);
