@@ -208,7 +208,7 @@
 
 
 <div class="selection-panel">
-  <strong>Selected Documents</strong>
+  <strong id="panelTitle"></strong>
   <div id="selectionList"></div>
   <button id="clearBtn" class="action-btn">Clear all</button>
   <button id="exportCsvBtn" class="action-btn">Export CSV</button>
@@ -231,7 +231,37 @@
 
 <script>
 const isFrench = navigator.language?.toLowerCase().startsWith("fr");
+const UI = isFrench
+  ? {
+      // Panel
+      selectedDocuments: "Documents sélectionnés",
+      clearAll: "Tout effacer",
+      exportCsv: "Exporter CSV",
+      exportJson: "Exporter JSON",
 
+      // Toolbar tooltips
+      select: "Sélectionner",
+      polygon: "Sélection par polygone",
+      line: "Sélection par ligne",
+      delete: "Supprimer la géométrie",
+      zoomIn: "Zoom avant",
+      zoomOut: "Zoom arrière"
+    }
+  : {
+      // Panel
+      selectedDocuments: "Selected Documents",
+      clearAll: "Clear all",
+      exportCsv: "Export CSV",
+      exportJson: "Export JSON",
+
+      // Toolbar tooltips
+      select: "Select",
+      polygon: "Polygon select",
+      line: "Line select",
+      delete: "Delete geometry",
+      zoomIn: "Zoom in",
+      zoomOut: "Zoom out"
+    };
 const STYLE_EN =
   "https://www.arcgis.com/sharing/rest/content/items/800d755712e8415aab301b9d55bc2800/resources/styles/root.json";
 const STYLE_FR =
@@ -387,7 +417,13 @@ toolLine.onclick = e => {
   draw.changeMode("draw_line_string");
   setActive(e.target);
 };
-
+// ---- Toolbar tooltips (language-dependent) ----
+toolSelect.title = UI.select;
+toolPolygon.title = UI.polygon;
+toolLine.title = UI.line;
+toolDelete.title = UI.delete;
+zoomIn.title = UI.zoomIn;
+zoomOut.title = UI.zoomOut;
 
 toolDelete.onclick = () => {
   const selected = draw.getSelectedIds();
@@ -406,6 +442,12 @@ toolSelect.classList.add("active");
 
 
 const selectedDocs = new Set();
+  // ---- UI text (language-dependent) ----
+document.getElementById("panelTitle").textContent = UI.selectedDocuments;
+
+clearBtn.textContent = UI.clearAll;
+exportCsvBtn.textContent = UI.exportCsv;
+exportJsonBtn.textContent = UI.exportJson;
 const listEl = document.getElementById("selectionList");
 
 function updateList() {
