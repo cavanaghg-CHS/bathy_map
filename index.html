@@ -517,7 +517,6 @@ map.addSource("bathy", {
   data: "https://raw.githubusercontent.com/cavanaghg-chs/bathy_map/main/data/product-results.geojson",
   promoteId: "SORID"
 });
-
 map.addLayer({
   id: "bathy-fill",
   type: "fill",
@@ -550,13 +549,12 @@ map.addLayer({
     ]
   }
 });
-
 map.once("idle", () => {
   cached = map.querySourceFeatures("bathy");
 });
 
 map.on("click", "bathy-fill", e => {
-  select(e.features[0].id); // id === SORID
+  select(e.features[0].id);
 });
 
 let hoveredId = null;
@@ -569,11 +567,9 @@ map.on("mousemove", "bathy-fill", e => {
   }
 
   hoveredId = id;
-
   map.setFeatureState({ source: "bathy", id }, { hover: true });
 
   map.getCanvas().style.cursor = "pointer";
-
   hoverPopup
     .setLngLat(e.lngLat)
     .setHTML(`<strong>SORID:</strong> ${id}`)
@@ -588,73 +584,6 @@ map.on("mouseleave", "bathy-fill", () => {
   map.getCanvas().style.cursor = "";
   hoverPopup.remove();
 });
-
-  
-map.addLayer({
-  id: "bathy-fill",
-  type: "fill",
-  source: "bathy",
-  paint: { "fill-color": "#228B22", "fill-opacity": 0.45 }
-});
-
-
-
-
-  map.addLayer({
-  id: "bathy-outline",
-  type: "line",
-  source: "bathy",
-  paint: {
-    "line-color": [
-      "case",
-      ["boolean", ["feature-state", "selected"], false], "#FFD700",
-      ["boolean", ["feature-state", "hover"], false], "#2563EB",
-      "#004d00"
-    ],
-    "line-width": [
-      "case",
-      ["boolean", ["feature-state", "hover"], false], 3,
-      2
-    ]
-  }
-});
-
-  map.once("idle", () => {
-    cached = map.querySourceFeatures("bathy");
-  });
-
-  map.on("click", "bathy-fill", e => select(e.features[0].id));
-  // ---- Hover highlight for bathy polygons ----
-let hoveredId = null;
-
-map.on("mousemove", "bathy-fill", e => {
-  const id = e.features[0].id;
-
-  if (hoveredId !== null && hoveredId !== id) {
-    map.setFeatureState(
-      { source: "bathy", id: hoveredId },
-      { hover: false }
-    );
-  }
-
-  hoveredId = id;
-
-  map.setFeatureState(
-    { source: "bathy", id },
-    { hover: true }
-  );
-});
-
-map.on("mouseleave", "bathy-fill", () => {
-  if (hoveredId !== null) {
-    map.setFeatureState(
-      { source: "bathy", id: hoveredId },
-      { hover: false }
-    );
-  }
-  hoveredId = null;
-});
- 
 
 });
 
@@ -684,24 +613,7 @@ map.on("draw.create", e => {
     });
   }
 });
-
-  // Existing polygon selection
-  if (feature.geometry.type === "Polygon") {
-
-  }
-
-  // ✅ NEW: line-based selection
-  if (feature.geometry.type === "LineString") {
-    const buffered = turf.buffer(feature, 0.5, { units: "kilometers" });
-
-    cached.forEach(f => {
-      if (turf.booleanIntersects(buffered, f)) {
-        select(f.id);
-      }
-    });
-  }
-
-});
+  
 </script>
 
 
