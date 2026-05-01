@@ -499,6 +499,23 @@ function download(blob, name) {
 
 let cached = [];
   let isDrawing = false;
+function formatDate(value) {
+  if (!value) return "—";
+
+  const d = new Date(value);
+  if (isNaN(d)) return "—";
+
+  const formatter = new Intl.DateTimeFormat(
+    isFrench ? "fr-CA" : "en-CA",
+    {
+      day: "numeric",
+      month: "long",
+      year: "numeric"
+    }
+  );
+
+  return formatter.format(d);
+}
 
 map.on("load", () => {
 map.addSource("bathy", {
@@ -584,7 +601,7 @@ map.on("mousemove", "bathy-fill", e => {
 
   map.getCanvas().style.cursor = "pointer";
 const props = e.features[0].properties;
-const date = props?.SUREND ?? "—";
+const date = formatDate(props?.SUREND);
 
 if (popupId !== id) {
   hoverPopup
