@@ -41,7 +41,53 @@
   z-index: 10;
 }
 
+.year-range {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(0,0,0,0.15);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
 
+.year-slider {
+  position: relative;
+  height: 140px;
+  width: 24px;
+}
+
+.year-slider input[type="range"] {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 140px;
+  height: 24px;
+  transform: rotate(-90deg) translateX(-58px);
+  transform-origin: center;
+  background: transparent;
+  pointer-events: none;
+  -webkit-appearance: none;
+}
+
+.year-slider input::-webkit-slider-thumb {
+  pointer-events: auto;
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #2563EB;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+}
+
+#yearMinLabel,
+#yearMaxLabel {
+  font-size: 11px;
+  font-weight: 500;
+  opacity: 0.8;
+  user-select: none;
+}
 .action-btn {
   width: 100%;
   margin-top: 6px;
@@ -183,37 +229,17 @@
   <button id="zoomIn" title="Zoom in">+</button>
   <button id="zoomOut" title="Zoom out">−</button>
 
-  <!-- Year filter -->
-  <div style="
-    margin-top:8px;
-    padding-top:8px;
-    border-top:1px solid rgba(0,0,0,0.15);
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-  ">
-    <div id="yearLabel" style="
-      font-size:11px;
-      font-weight:500;
-      margin-bottom:6px;
-      opacity:0.8;
-      user-select:none;
-    ">
-      —
-    </div>
+<!-- Year range filter -->
+<div class="year-range">
+  <div id="yearMinLabel">—</div>
 
-    <input
-      id="yearSlider"
-      type="range"
-      orient="vertical"
-      style="
-        writing-mode: bt-lr;
-        -webkit-appearance: slider-vertical;
-        height:120px;
-        width:18px;
-      "
-    />
+  <div class="year-slider">
+    <input id="yearMin" type="range" />
+    <input id="yearMax" type="range" />
   </div>
+
+  <div id="yearMaxLabel">—</div>
+</div>
 </div>
 
 
@@ -546,25 +572,43 @@ function formatDate(value) {
   ).format(d);
 }
 
-  function applyYearFilter(minYear) {
-  const filter = [
-    ">=",
-    ["to-number", ["slice", ["get", "SUREND"], 0, 4]],
-    minYear
+  function applyYearFilter(minYear, maxYear) {
+  const",  const filter = [
+    [">=", ["to-number", ["slice", ["get", "SUREND"], 0, 4]], minYear],
+    ["<=", ["to-number", ["slice", ["get", "SUREND"], 0, 4]], maxYear]
   ];
 
   map.setFilter("bathy-fill", filter);
   map.setFilter("bathy-outline", filter);
 }
 
-  const yearSlider = document.getElementById("yearSlider");
-const yearLabel = document.getElementById("yearLabel");
+const yearMin = document.getElementById("yearMin");
+const yearMax = document.getElementById("yearMax");
 
-yearSlider.addEventListener("input", () => {
-  const year = Number(yearSlider.value);
-  yearLabel.textContent = `${year}+`;
-  applyYearFilter(year);
-});
+function updateYearRange(e) {
+  let min = Number(yearMin.value);
+  let max = Number(yearMax.value);
+
+  // prevent crossing
+  if (min > max) {
+    if (e.target === yearMin) {
+      yearMin.value = max;
+      min = max;
+    } else {
+      yearMax.value = min;
+      max = min;
+    }
+  }
+
+  document.getElementById("yearMinLabel").textContent = min;
+  document.getElementById("yearMaxLabel").textContent = max;
+
+  applyYearFilter(min, max);
+}
+
+yearMin.addEventListener("input", updateYearRange);
+yearMax.addEventListener("input", updateYearRange);
+
 
 map.on("load", () => {
 map.addSource("bathy", {
@@ -617,16 +661,18 @@ map.once("idle", () => {
   const minYear = Math.min(...years);
   const maxYear = Math.max(...years);
 
-  const slider = document.getElementById("yearSlider");
-  const label = document.getElementById("yearLabel");
+  yearMin.min = minYear;
+  yearMin.max = maxYear;
+  yearMin.value = minYear;
 
-  slider.min = minYear;
-  slider.max = maxYear;
-  slider.value = minYear;
+  yearMax.min = minYear;
+  yearMax.max = maxYear;
+  yearMax.value = maxYear;
 
-  label.textContent = `${minYear} – ${maxYear}`;
+  document.getElementById("yearMinLabel").textContent = minYear;
+  document.getElementById("yearMaxLabel").textContent = maxYear;
 
-  applyYearFilter(minYear);
+  applyYearFilter(minYear, maxYear);
 });
 
 map.on("click", "bathy-fill", e => {
