@@ -558,6 +558,7 @@ map.once("idle", () => {
 });
 
 map.on("click", "bathy-fill", e => {
+  if (isDrawing) return;
   select(e.features[0].id);
 });
 
@@ -605,7 +606,7 @@ map.on("draw.create", e => {
   if (drawn.geometry.type === "Polygon") {
     cached.filter(isValid).forEach(f => {
       if (turf.booleanIntersects(drawn, f)) {
-        select(f.id); // SORID
+        select(f.id);
       }
     });
   }
@@ -619,6 +620,10 @@ map.on("draw.create", e => {
       }
     });
   }
+
+  // ✅ UX polish
+  draw.deleteAll();
+  draw.changeMode("simple_select");
 });
   
 </script>
