@@ -384,21 +384,6 @@ const draw = new MapboxDraw({
 
   
 map.addControl(draw, "top-left");
- map.on("draw.modechange", e => {
-  isDrawing = e.mode !== "simple_select";
-
-  // ✅ Clear hover immediately when drawing starts
-  if (isDrawing && hoveredId !== null) {
-    map.setFeatureState(
-      { source: "bathy", id: hoveredId },
-      { hover: false }
-    );
-    hoveredId = null;
-    hoverPopup.remove();
-    map.getCanvas().style.cursor = "";
-  }
-});
-
   
 function setActive(btn) {
   document.querySelectorAll(".toolbox button")
@@ -563,6 +548,20 @@ map.on("click", "bathy-fill", e => {
 });
 
 let hoveredId = null;
+map.on("draw.modechange", e => {
+  isDrawing = e.mode !== "simple_select";
+
+  // ✅ Clear hover immediately when drawing starts
+  if (isDrawing && hoveredId !== null) {
+    map.setFeatureState(
+      { source: "bathy", id: hoveredId },
+      { hover: false }
+    );
+    hoveredId = null;
+    hoverPopup.remove();
+    map.getCanvas().style.cursor = "";
+  }
+});
 
 map.on("mousemove", "bathy-fill", e => {
   // ✅ Disable hover while drawing
