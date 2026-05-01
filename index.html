@@ -384,6 +384,20 @@ const draw = new MapboxDraw({
 
   
 map.addControl(draw, "top-left");
+ map.on("draw.modechange", e => {
+  isDrawing = e.mode !== "simple_select";
+
+  // ✅ Clear hover immediately when drawing starts
+  if (isDrawing && hoveredId !== null) {
+    map.setFeatureState(
+      { source: "bathy", id: hoveredId },
+      { hover: false }
+    );
+    hoveredId = null;
+    hoverPopup.remove();
+    map.getCanvas().style.cursor = "";
+  }
+});
 
   
 function setActive(btn) {
@@ -499,6 +513,7 @@ function download(blob, name) {
 }
 
 let cached = [];
+  let isDrawing = false;
 
 map.on("load", () => {
 map.addSource("bathy", {
@@ -549,6 +564,9 @@ map.on("click", "bathy-fill", e => {
 let hoveredId = null;
 
 map.on("mousemove", "bathy-fill", e => {
+  // ✅ Disable hover while drawing
+  if (isDrawing) return;
+
   const id = e.features[0].id;
 
   if (hoveredId !== null && hoveredId !== id) {
