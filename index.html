@@ -176,52 +176,50 @@
 <div id="map"></div>
   
 <div class="toolbox">
-  
-<button id="toolSelect" title="Select" class="tool-btn">
-  <svg
-    width="16"
-    height="16"
-    viewBox="0 0 16 16"
-    xmlns="http://www.w3.org/2000/svg"
-    aria-hidden="true">
-    <path
-      d="M2 1 L2 14 L5 11 L7 15 L9 14 L7 10 L11 10 Z"
-      fill="#0f172a"/>
-  </svg>
-</button>
 
+  <button id="toolSelect" title="Select" class="tool-btn">…</button>
   <button id="toolPolygon" title="Polygon">⬠</button>
   <button id="toolLine" title="Line select">／</button>
   <button id="zoomIn" title="Zoom in">+</button>
   <button id="zoomOut" title="Zoom out">−</button>
+
+  <!-- Year filter -->
+  <div style="
+    margin-top:8px;
+    padding-top:8px;
+    border-top:1px solid rgba(0,0,0,0.15);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+  ">
+    <div id="yearLabel" style="
+      font-size:11px;
+      font-weight:500;
+      margin-bottom:6px;
+      opacity:0.8;
+      user-select:none;
+    ">
+      —
+    </div>
+
+    <input
+      id="yearSlider"
+      type="range"
+      orient="vertical"
+      style="
+        writing-mode: bt-lr;
+        -webkit-appearance: slider-vertical;
+        height:120px;
+        width:18px;
+      "
+    />
+  </div>
 </div>
 
 
 <div class="selection-panel">
-<strong id="panelTitle"></strong>
-
-<!-- Year range filter -->
-<div style="margin-bottom:10px;">
-  <div style="display:flex; justify-content:space-between; font-size:11px; opacity:0.8;">
-    <span id="yearMinLabel"></span>
-    <span id="yearMaxLabel"></span>
-  </div>
-
-  <input
-    id="yearMin"
-    type="range"
-    style="width:100%; margin-top:4px;"
-  />
-
-  <input
-    id="yearMax"
-    type="range"
-    style="width:100%; margin-top:2px;"
-  />
-</div>
-
-<div id="selectionList"></div>
-
+  <strong id="panelTitle"></strong>
+  <div id="selectionList"></div>
   <button id="clearBtn" class="action-btn">Clear all</button>
   <button id="exportCsvBtn" class="action-btn">Export CSV</button>
   <button id="exportJsonBtn" class="action-btn">Export JSON</button>
@@ -255,7 +253,6 @@ const UI = isFrench
       select: "Sélectionner",
       polygon: "Sélection par polygone",
       line: "Sélection par ligne",
-      delete: "Supprimer la géométrie",
       zoomIn: "Zoom avant",
       zoomOut: "Zoom arrière",
 
@@ -274,7 +271,6 @@ const UI = isFrench
       select: "Select",
       polygon: "Polygon select",
       line: "Line select",
-      delete: "Delete geometry",
       zoomIn: "Zoom in",
       zoomOut: "Zoom out",
 
@@ -550,36 +546,26 @@ function formatDate(value) {
   ).format(d);
 }
 
-function applyYearFilter(minYear, maxYear) {
+  function applyYearFilter(minYear) {
   const filter = [
-    "all",
-    [">=", ["to-number", ["slice", ["get", "SUREND"], 0, 4]], minYear],
-    ["<=", ["to-number", ["slice", ["get", "SUREND"], 0, 4]], maxYear]
+    ">=",
+    ["to-number", ["slice", ["get", "SUREND"], 0, 4]],
+    minYear
   ];
 
   map.setFilter("bathy-fill", filter);
   map.setFilter("bathy-outline", filter);
 }
-const minInput = document.getElementById("yearMin");
-const maxInput = document.getElementById("yearMax");
 
-function updateYearRange() {
-  let min = Number(minInput.value);
-  let max = Number(maxInput.value);
+  const yearSlider = document.getElementById("yearSlider");
+const yearLabel = document.getElementById("yearLabel");
 
-  // Prevent crossing handles
-  if (min > max) {
-    [min, max] = [max, min];
-  }
+yearSlider.addEventListener("input", () => {
+  const year = Number(yearSlider.value);
+  yearLabel.textContent = `${year}+`;
+  applyYearFilter(year);
+});
 
-  document.getElementById("yearMinLabel").textContent = min;
-  document.getElementById("yearMaxLabel").textContent = max;
-
-  applyYearFilter(min, max);
-}
-
-minInput.addEventListener("input", updateYearRange);
-maxInput.addEventListener("input", updateYearRange);
 map.on("load", () => {
 map.addSource("bathy", {
   type: "geojson",
@@ -631,36 +617,17 @@ map.once("idle", () => {
   const minYear = Math.min(...years);
   const maxYear = Math.max(...years);
 
-  const minInput = document.getElementById("yearMin");
-  const maxInput = document.getElementById("yearMax");
+  const slider = document.getElementById("yearSlider");
+  const label = document.getElementById("yearLabel");
 
-  minInput.min = minYear;
-  minInput.max = maxYear;
-  minInput.value = minYear;
+  slider.min = minYear;
+  slider.max = maxYear;
+  slider.value = minYear;
 
-  maxInput.min = minYear;
-  maxInput.max = maxYear;
-  maxInput.value = maxYear;
+  label.textContent = `${minYear} – ${maxYear}`;
 
-  document.getElementById("yearMinLabel").textContent = minYear;
-  document.getElementById("yearMaxLabel").textContent = maxYear;
-
-  applyYearFilter(minYear, maxYear);
+  applyYearFilter(minYear);
 });
-
-document.getElementById("yearFilter").addEventListener("change", e => {
-  const year = e.target.value;
-
-  // Expression extracts year from SUREND (YYYYMMDD → YYYY)
-  const filter =
-    year === "all"
-      ? null
-      : ["==", ["slice", ["get", "SUREND"], 0, 4], year];
-
-  map.setFilter("bathy-fill", filter);
-  map.setFilter("bathy-outline", filter);
-});
-``  
 
 map.on("click", "bathy-fill", e => {
   if (isDrawing) return;
