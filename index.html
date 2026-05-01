@@ -201,6 +201,7 @@
 
   <button id="toolPolygon" title="Polygon">⬠</button>
   <button id="toolLine" title="Line select">／</button>
+  <button id="toolDelete" title="Delete geometry">🗑</button
   <button id="zoomIn" title="Zoom in">+</button>
   <button id="zoomOut" title="Zoom out">−</button>
 </div>
@@ -386,6 +387,15 @@ toolLine.onclick = e => {
   draw.changeMode("draw_line_string");
   setActive(e.target);
 };
+
+
+toolDelete.onclick = () => {
+  const selected = draw.getSelectedIds();
+  if (selected.length > 0) {
+    draw.delete(selected);
+  }
+};
+
 
 zoomIn.onclick = () => map.zoomIn();
 zoomOut.onclick = () => map.zoomOut();
