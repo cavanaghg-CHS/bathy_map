@@ -305,6 +305,61 @@ const draw = new MapboxDraw({
     }
   }
 ]
+
+/* =========================================
+   ACTIVE LINE STRING (ArcGIS Pro style)
+   ========================================= */
+{
+  id: "gl-draw-line-active",
+  type: "line",
+  filter: [
+    "all",
+    ["==", "active", "true"],
+    ["==", "$type", "LineString"]
+  ],
+  paint: {
+    "line-color": "#2563EB",
+    "line-width": 2
+  }
+},
+
+/* =========================================
+   INACTIVE LINE STRING (while drawing)
+   ========================================= */
+{
+  id: "gl-draw-line-inactive",
+  type: "line",
+  filter: [
+    "all",
+    ["==", "active", "false"],
+    ["==", "$type", "LineString"]
+  ],
+  paint: {
+    "line-color": "#2563EB",
+    "line-width": 2,
+    "line-opacity": 0.6
+  }
+},
+
+/* =========================================
+   LINE VERTICES
+   ========================================= */
+{
+  id: "gl-draw-line-vertex-active",
+  type: "circle",
+  filter: [
+    "all",
+    ["==", "meta", "vertex"],
+    ["==", "$type", "Point"]
+  ],
+  paint: {
+    "circle-radius": 4,
+    "circle-color": "#FFFFFF",
+    "circle-stroke-color": "#2563EB",
+    "circle-stroke-width": 2
+  }
+}  
+  
 });
 
 
