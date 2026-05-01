@@ -236,7 +236,11 @@ const UI = isFrench
       line: "Sélection par ligne",
       delete: "Supprimer la géométrie",
       zoomIn: "Zoom avant",
-      zoomOut: "Zoom arrière"
+      zoomOut: "Zoom arrière",
+
+      // Popup labels
+      documentId: "Id du document",
+      date: "Date"
     }
   : {
       // Panel
@@ -251,8 +255,13 @@ const UI = isFrench
       line: "Line select",
       delete: "Delete geometry",
       zoomIn: "Zoom in",
-      zoomOut: "Zoom out"
+      zoomOut: "Zoom out",
+
+      // Popup labels
+      documentId: "Document ID",
+      date: "Date"
     };
+
 const STYLE_EN =
   "https://www.arcgis.com/sharing/rest/content/items/800d755712e8415aab301b9d55bc2800/resources/styles/root.json";
 const STYLE_FR =
@@ -548,6 +557,7 @@ map.on("click", "bathy-fill", e => {
 });
 
 let hoveredId = null;
+  let popupId = null;
 map.on("draw.modechange", e => {
   isDrawing = e.mode !== "simple_select";
 
@@ -582,10 +592,20 @@ map.on("mousemove", "bathy-fill", e => {
   map.setFeatureState({ source: "bathy", id }, { hover: true });
 
   map.getCanvas().style.cursor = "pointer";
+const props = e.features[0].properties;
+const date = props?.SUREND ?? "—";
+
+if (popupId !== id) {
   hoverPopup
     .setLngLat(e.lngLat)
-    .setHTML(`<strong>SORID:</strong> ${id}`)
+    .setHTML(`
+      <strong>${UI.documentId}:</strong> ${id}<br>
+      <strong>${UI.date}:</strong> ${date}
+    `)
     .addTo(map);
+  popupId = id;
+}
+
 });
 
 map.on("mouseleave", "bathy-fill", () => {
@@ -595,6 +615,7 @@ map.on("mouseleave", "bathy-fill", () => {
   hoveredId = null;
   map.getCanvas().style.cursor = "";
   hoverPopup.remove();
+  popupId = null;
 });
 
 });
